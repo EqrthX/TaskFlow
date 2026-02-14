@@ -1,0 +1,59 @@
+name: Node.js CI
+
+# 1. Trigger: จะให้เริ่มทำงานตอนไหน?
+on:
+  push:
+    branches: [ "main", "master" ] # ทำงานเมื่อ Push เข้า main
+  pull_request:
+    branches: [ "main", "master" ] # ทำงานเมื่อมีการเปิด PR
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    # 2. Database Service: จำลอง Postgres ขึ้นมาบน GitHub Runner
+    services:
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: test_user
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: taskflow_test
+        ports:
+          - 5432:5432
+        # Health Check: รอจนกว่า Database จะพร้อมใช้งานจริงๆ
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    steps:
+    # 3. เตรียมเครื่อง (Checkout Code)
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    # 4. ลง Node.js
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20' # ใช้ Version ให้ตรงกับเครื่องคุณ
+        cache: 'npm'
+
+    # 5. ลง Library
+    - name: Install dependencies
+      run: npm ci # ใช้ ci แทน install เพื่อความแน่นอนของ version
+
+    # 6. สร้าง Table ใน Database (สำคัญ!)
+    # เราต้อง Override ค่า DATABASE_URL ให้ชี้ไปที่ Service ด้านบน
+    - name: Run Prisma Push
+      env:
+        DATABASE_URL: "postgresql://admin:admin123@localhost:5432/taskflow?schema=public"
+      run: npx prisma db push
+
+    # 7. รัน Test
+    - name: Run Tests
+      env:
+        DATABASE_URL: "postgresql://admin:admin123@localhost:5432/taskflow?schema=public"
+        JWT_SECRET: "test-secret" # ใส่ค่าหลอกๆ ไว้สำหรับ Test
+      run: npm test
