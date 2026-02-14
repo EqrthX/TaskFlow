@@ -44,7 +44,7 @@ jobs:
     # 5. ลง Library
     - name: Install dependencies
       run: npm ci # ใช้ ci แทน install เพื่อความแน่นอนของ version
-    
+      working-directory: ./server
     # 6. สร้าง Table ใน Database (สำคัญ!)
     # เราต้อง Override ค่า DATABASE_URL ให้ชี้ไปที่ Service ด้านบน
     - name: Run Prisma Push
@@ -58,3 +58,4 @@ jobs:
         DATABASE_URL: "postgresql://admin:admin123@localhost:5432/taskflow?schema=public"
         JWT_SECRET: "test-secret" # ใส่ค่าหลอกๆ ไว้สำหรับ Test
       run: npm test
+      working-directory: ./server
