@@ -39,11 +39,12 @@ jobs:
       with:
         node-version: '20' # ใช้ Version ให้ตรงกับเครื่องคุณ
         cache: 'npm'
+        cache-dependency-path: ./server/package-lock.json
 
     # 5. ลง Library
     - name: Install dependencies
       run: npm ci # ใช้ ci แทน install เพื่อความแน่นอนของ version
-
+    
     # 6. สร้าง Table ใน Database (สำคัญ!)
     # เราต้อง Override ค่า DATABASE_URL ให้ชี้ไปที่ Service ด้านบน
     - name: Run Prisma Push
