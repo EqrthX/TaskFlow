@@ -1,7 +1,8 @@
 import { Request, Response } from "express";
 import { LoginRequest, RegisterRequest } from "../types/userTypes"
-import { RegisterServices } from "../services/userServices";
+import { LoginService, RegisterServices } from "../services/userServices";
 import logger from "../config/logger";
+import {isValidEmail} from  '../utils/regEx';
 
 export const Registination = async (req: Request<{}, {}, RegisterRequest>, res: Response) => {
     logger.info(`Start Controller Registination ${new Date().toDateString()}`);
@@ -45,13 +46,27 @@ export const Registination = async (req: Request<{}, {}, RegisterRequest>, res: 
     }
 }
 
-
 export const Login = async (req: Request<{}, {}, LoginRequest>, res: Response) => {
     logger.info(`Start Controller Login ${new Date().toDateString()}`)
     const { email, password } = req.body;
 
     try {
+        if(!email || !password) {
+            return res.status(400).json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน" });
+        }
 
+        if(!isValidEmail(email)) {
+            return res.status(400).json({error: "รูปแบบอีเมลไม่ถูกต้อง"})
+        }
+
+        const user = await LoginService({
+            email,
+            password
+        })
+        return res.status(200).json({
+            message: "เข้าสู่ระบบสำเร็จ",
+            data: user
+        })
     } catch (error) {
         res.status(500).json({ error: "Somthing went wrong to Login" })
     }
