@@ -1,4 +1,5 @@
 node_modules
 /src/generated/prisma
-logs/*.log
+logs/
 logs/*.json
+*-audit.json
