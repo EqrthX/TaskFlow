@@ -53,10 +53,9 @@ jobs:
       run: npx prisma db push
       working-directory: ./server
 
-    # 7. รัน Test
-    # - name: Run Tests
-    #   env:
-    #     DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/taskflow?schema=public"
-    #     JWT_SECRET: "test-secret" # ใส่ค่าหลอกๆ ไว้สำหรับ Test
-    #   run: npm test
-    #   working-directory: ./server
+    - name: Run Tests
+      env:
+        DATABASE_URL: "postgresql://test_user:test_password@localhost:5432/taskflow?schema=public"
+        JWT_SECRET: "test-secret" # ใส่ค่าหลอกๆ ไว้สำหรับ Test
+      run: npm test
+      working-directory: ./server
