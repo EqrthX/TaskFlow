@@ -3,7 +3,7 @@ FROM node:20-alpine
 WORKDIR /app
 
 COPY package*.json ./
-RUN npm ci && npm cache clean --force && npm install
+RUN npm ci 
 
 COPY prisma ./prisma/
 RUN npx prisma generate --schema prisma/schema.prisma

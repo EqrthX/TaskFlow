@@ -5,3 +5,4 @@ logs/*.json
 *-audit.json
 .env
 .env.*
+dist
