@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 import logger from "../config/logger";
 import { AuthRequest } from "../middlewares/authMiddleware";
-import { AddTaskServices } from "../services/taskServices";
+import { AddTaskServices, DeleteTaskServices, UpdateTaskServices, UpdateTaskStatusServices } from "../services/taskServices";
 import prisma from "../config/db";
 
 
@@ -58,3 +58,64 @@ export const showTasks = async (req: AuthRequest, res: Response) => {
         })
     }
 }
+
+export const UpdateStatusTask = async (req: AuthRequest, res: Response) => {
+    try {
+        const {id} = req.params;
+
+        const {isDone} = req.body;
+
+        const userId = req.user.userId;
+
+        const updateTask = await UpdateTaskStatusServices(Number(id), isDone, userId);
+
+        return res.status(200).json({
+            message: "อัพเดตสถานะงานเสร็จสิ้น",
+            data: updateTask
+        })
+    } catch (error: any) {
+        return res.status(400).json({ error: error.message });
+    }
+}
+
+export const UpdateTask = async (req: AuthRequest, res: Response) => {
+    try {
+        const userId = req.user.userId;
+
+        const {id} = req.params;
+
+        const {title, description} = req.body;
+
+        const newUpdateTask = await UpdateTaskServices(Number(id), title, description, userId);
+
+        return res.status(200).json({
+            message:"อัพเดตข้อมูลเสร็จสิ้น",
+            newUpdateTask
+        })
+    } catch (error) {
+        return res.status(400).json({
+            message:"เกิดข้อผิดพลาดในการอัพเดท"
+        })
+    }
+}
+
+export const DeleteTask = async (req: AuthRequest, res:Response) => {
+    try {
+        const {id} = req.params;
+
+        const userId = req.user.userId;
+
+        const deleteTask = await DeleteTaskServices(Number(id), userId);
+
+        return res.status(200).json({
+            message:"ลบงานเสร็จสิ้น",
+            data: deleteTask
+        })
+        
+    } catch (error: any) {
+        return res.status(400).json({
+            message: error.message
+        })
+    }
+}
+
