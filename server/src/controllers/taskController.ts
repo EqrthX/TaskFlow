@@ -1,0 +1,60 @@
+import { Request, Response } from "express";
+import logger from "../config/logger";
+import { AuthRequest } from "../middlewares/authMiddleware";
+import { AddTaskServices } from "../services/taskServices";
+import prisma from "../config/db";
+
+
+export const AddTasks = async (req: AuthRequest, res: Response) => {
+    logger.info(`Start Controller Registination ${new Date().toDateString()}`);
+    const {title, description, date} = req.body;
+    try {
+        const userId = req.user.userId;
+        
+        if(!title || !date || !description) {
+            return res.status(400).json({error: "กรุณาส่งข้อมูล title และ date ให้ครบ"})
+        }
+
+        const newTask = await AddTaskServices({
+            title, 
+            description, 
+            date: new Date(date), 
+            userId
+        });
+
+        return res.status(201).json({
+            message: "เพิ่มงานสำเร็จ",
+            data: newTask
+        })
+    } catch (error: any) {
+        if (error.message === "TASKS_NOTFOUND") {
+            logger.error(`Error Controller AddTasks Email:${error.message} ${new Date().toDateString()}`)
+            return res.status(400).json({ error: "ไม่มีข้อมูลงานที่กรอกเข้ามา" });
+        }
+        res.status(500).json({
+            error: "Something went wrong to AddTasks",
+            detail: error.message
+        })
+    }
+}
+
+export const showTasks = async (req: AuthRequest, res: Response) => {
+    try {
+        const result = await prisma.task.findMany({
+            where:{
+                userId: req.user.userId
+            },
+            orderBy: {
+                date: 'asc'
+            }
+        })
+        return res.status(200).json({
+            tasks: result
+        })
+    } catch (error: any) {
+        res.status(500).json({
+            error: "Something went wrong to AddTasks",
+            detail: error.message
+        })
+    }
+}

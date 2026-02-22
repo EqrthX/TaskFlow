@@ -14,12 +14,7 @@ const Login = () => {
 
     try {
       const res = await api.post("/auth/login", { email, password });
-      
-      // ✅ เก็บ Token
-      localStorage.setItem("accessToken", res.data.accessToken);
-      localStorage.setItem("user", JSON.stringify(res.data.user)); // เก็บข้อมูล user ไว้โชว์
-
-      // ✅ ไปหน้า Dashboard
+      localStorage.setItem("user", JSON.stringify(res.data.user));
       navigate("/dashboard");
     } catch (err: any) {
       console.error(err);
