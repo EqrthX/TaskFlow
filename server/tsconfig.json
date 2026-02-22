@@ -6,9 +6,7 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    "outDir": "./dist",
-    "rootDir": "./src",
-    
+    "outDir": "./dist",    
     // ✅ แค่บรรทัดนี้บรรทัดเดียวพอครับ สำหรับแก้เรื่อง Jest แดง
     "types": ["jest", "node"]
   },

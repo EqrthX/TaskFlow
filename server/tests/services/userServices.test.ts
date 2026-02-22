@@ -17,6 +17,7 @@ jest.mock('jsonwebtoken');
 describe('User Services', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    jest.resetAllMocks();
   });
 
   describe('RegisterServices', () => {
@@ -135,17 +136,15 @@ describe('User Services', () => {
 
   describe('refreshTokenService', () => {
     it('should throw error for invalid token', async () => {
-      (jwt.verify as jest.Mock).mockImplementationOnce((token, secret, callback) => {
-        callback(new Error('Invalid token'), null);
+      (jwt.verify as jest.Mock).mockImplementationOnce(() => {
+        throw new Error('Invalid token');
       });
 
       await expect(userServices.refreshTokenService('invalidToken')).rejects.toThrow('INVALID_REFRESH_TOKEN');
     });
 
     it('should throw error if refresh token does not match', async () => {
-      (jwt.verify as jest.Mock).mockImplementationOnce((token, secret, callback) => {
-        callback(null, { userId: '1' });
-      });
+      (jwt.verify as jest.Mock).mockReturnValueOnce({ userId: '1' });
 
       (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
         id: '1',
@@ -156,9 +155,9 @@ describe('User Services', () => {
     });
 
     it('should successfully refresh token', async () => {
-      (jwt.verify as jest.Mock).mockImplementationOnce((token, secret, callback) => {
-        callback(null, { userId: '1' });
-      });
+      const userData = { userId: '1' };
+
+      (jwt.verify as jest.Mock).mockReturnValueOnce(userData);
 
       (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
         id: '1',
