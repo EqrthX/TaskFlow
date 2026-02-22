@@ -5,15 +5,17 @@ import Sidebar from '../components/Sidebar'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths,
-  parseISO
+  parseISO,
 } from 'date-fns'
+import toast, { Toaster } from 'react-hot-toast';
 import { th } from 'date-fns/locale' // นำเข้าภาษาไทย
-import { LogOut, ChevronLeft, ChevronRight, Plus, Trash2, X, Menu } from 'lucide-react'
+import { LogOut, ChevronLeft, ChevronRight, Plus, Trash2, X, Menu, Loader2, Edit } from 'lucide-react'
 
 // --- Interface ---
 interface Task {
   id: number
   title: string
+  description?: string
   isDone: boolean
   date: string // รับเป็น ISO String จาก DB
 }
@@ -25,7 +27,7 @@ interface User {
 
 const Dashboard = () => {
   const navigate = useNavigate()
-
+  const [isLoading, setIsLoading] = useState(true) // 👈 กำหนดค่าเริ่มต้นเป็น true เพื่อให้โหลดทันทีที่เข้าเว็บ
   // State
   const [user, setUser] = useState<User | null>(null)
   const [tasks, setTasks] = useState<Task[]>([])
@@ -38,6 +40,42 @@ const Dashboard = () => {
   const [isModalOpen, setIsModalOpen] = useState(false)
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDescription, setNewTaskDescription] = useState('');
+
+  const [editingTask, setEditingTask] = useState<Task | null>(null)
+  const [editTitle, setEditTitle] = useState('')
+  const [editDescription, setEditDescription] = useState('')
+
+  const openEditModal = (task: Task) => {
+    setEditingTask(task);
+    setEditTitle(task.title);
+    setEditDescription(task.description || '');
+  };
+
+  // บันทึกการแก้ไข
+  const handleEditTask = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTask || !editTitle.trim()) return;
+
+    try {
+      // ⚠️ ฝั่ง Backend ต้องมีเส้น PATCH /tasks/edit-task/:id รับ title กับ description ด้วยนะ
+      await api.patch(`/tasks/update-task-content/${editingTask.id}`, {
+        title: editTitle,
+        description: editDescription
+      });
+
+      // อัปเดต UI
+      setTasks(tasks.map(t =>
+        t.id === editingTask.id
+          ? { ...t, title: editTitle, description: editDescription }
+          : t
+      ));
+
+      toast.success('แก้ไขงานสำเร็จ!');
+      setEditingTask(null); // ปิด Modal
+    } catch (error) {
+      toast.error('แก้ไขไม่สำเร็จ');
+    }
+  };
 
   // 1. โหลดข้อมูล
   useEffect(() => {
@@ -52,6 +90,8 @@ const Dashboard = () => {
         setTasks(res.data.tasks || [])
       } catch (e) {
         console.error("Fetch error", e)
+      } finally {
+        setIsLoading(false)
       }
     }
     fetchData()
@@ -60,6 +100,7 @@ const Dashboard = () => {
   // 2. ฟังก์ชันจัดการปฏิทิน
   const nextMonth = () => setCurrentMonth(addMonths(currentMonth, 1))
   const prevMonth = () => setCurrentMonth(subMonths(currentMonth, 1))
+
   const handleLogout = async () => {
     try {
       await api.post('/auth/logout');
@@ -95,16 +136,17 @@ const Dashboard = () => {
       }
 
       const res = await api.post('/tasks/add-tasks', payload)
-      
+
       setTasks([...tasks, res.data.data])
 
       // Reset & Close
       setNewTaskTitle('')
       setNewTaskDescription('')
       setIsModalOpen(false)
+      toast.success("เพิ่มงานสำเร็จ!")
     } catch (e) {
       console.error("Add task failed", e)
-      alert("เพิ่มงานไม่สำเร็จ")
+      toast.error("เพิ่มงานไม่สำเร็จ")
     }
   }
 
@@ -114,7 +156,7 @@ const Dashboard = () => {
       const updatedTasks = tasks.map(t => t.id === task.id ? { ...t, isDone: !t.isDone } : t)
       setTasks(updatedTasks)
 
-      await api.patch(`/tasks/${task.id}`, { isDone: !task.isDone })
+      await api.patch(`/tasks/update-task/${task.id}`, { isDone: !task.isDone })
     } catch (e) {
       console.error("Update failed", e)
     }
@@ -124,9 +166,10 @@ const Dashboard = () => {
     if (!confirm("ลบงานนี้?")) return
     try {
       setTasks(tasks.filter(t => t.id !== id))
-      await api.delete(`/tasks/${id}`)
+      await api.delete(`/tasks/delete-task/${id}`)
+      toast.success('ลบงานสำเร็จ!');
     } catch (e) {
-      alert("ลบไม่สำเร็จ")
+      toast.error("ลบไม่สำเร็จ กรุณาลองใหม่")
       console.error("Delete failed", e)
     }
   }
@@ -211,7 +254,14 @@ const Dashboard = () => {
       </div>
     )
   }
-
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-slate-300 flex flex-col items-center justify-center font-sans">
+        <Loader2 className="w-12 h-12 text-blue-600 animate-spin mb-4" />
+        <p className="text-gray-600 font-medium">กำลังโหลดข้อมูล...</p>
+      </div>
+    )
+  }
   return (
     <div className="min-h-screen bg-slate-300 font-sans flex">
       {/* Sidebar */}
@@ -282,89 +332,144 @@ const Dashboard = () => {
 
         {/* Main Content */}
         <main className="max-w-6xl mx-auto px-2 sm:px-4 pb-6 sm:pb-10 flex-1">
-        {/* Header ปฏิทิน */}
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 bg-white p-3 sm:p-4 rounded-t-lg shadow-sm border-b">
-          <div className="flex items-center gap-1 sm:gap-4 w-full sm:w-auto">
-            <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex-1 sm:flex-none">
-              {format(currentMonth, 'MMMM yyyy', { locale: th })} {/* แสดงชื่อเดือนภาษาไทย */}
-            </h2>
-            <div className="flex gap-1">
-              <button onClick={prevMonth} className="p-1 sm:p-2 hover:bg-gray-100 rounded text-gray-600"><ChevronLeft size={20} className="sm:size-5" /></button>
-              <button onClick={nextMonth} className="p-1 sm:p-2 hover:bg-gray-100 rounded text-gray-600"><ChevronRight size={20} className="sm:size-5" /></button>
-            </div>
-          </div>
-          <button
-            onClick={() => { setSelectedDate(new Date()); setIsModalOpen(true); }}
-            className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1 sm:gap-2 shadow-sm text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start"
-          >
-            <Plus size={20} /> <span className="hidden sm:inline">สร้างงานวันนี้</span>
-          </button>
-        </div>
-
-        {/* ตัวปฏิทิน */}
-        <div className="bg-white rounded-b-lg shadow overflow-hidden">
-          {renderCalendar()}
-        </div>
-      </main>
-
-      {/* --- Modal เพิ่มงาน --- */}
-      {isModalOpen && selectedDate && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setIsModalOpen(false)}>
-          <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 sm:p-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <div className="flex justify-between items-start gap-2 mb-4">
-              <h3 className="text-base sm:text-lg font-semibold text-gray-800">
-                เพิ่มงานวันที่ {format(selectedDate, 'd MMM yyyy', { locale: th })}
-              </h3>
-              <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
-                <X size={24} />
-              </button>
-            </div>
-
-            <form onSubmit={handleAddTask}>
-              <input
-                autoFocus
-                type="text"
-                placeholder="พิมพ์ชื่อรายการงาน..."
-                className="w-full border rounded-lg p-2 sm:p-3 focus:ring-2 focus:ring-blue-500 outline-none mb-3 sm:mb-4 text-sm"
-                value={newTaskTitle}
-                onChange={e => setNewTaskTitle(e.target.value)}
-              />
-              <textarea
-                placeholder='รายละเอียด'
-                className="w-full border rounded-lg p-2 sm:p-3 focus:ring-2 focus:ring-blue-500 outline-none mb-3 sm:mb-4 text-sm resize-none"
-                rows={3}
-                value={newTaskDescription}
-                onChange={e => setNewTaskDescription(e.target.value)}
-              />
-              <div className="flex justify-end gap-2">
-                <button type="button" onClick={() => setIsModalOpen(false)} className="px-3 sm:px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">ยกเลิก</button>
-                <button type="submit" className="px-3 sm:px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">บันทึก</button>
+          {/* Header ปฏิทิน */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4 bg-white p-3 sm:p-4 rounded-t-lg shadow-sm border-b">
+            <div className="flex items-center gap-1 sm:gap-4 w-full sm:w-auto">
+              <h2 className="text-lg sm:text-2xl font-bold text-gray-800 flex-1 sm:flex-none">
+                {format(currentMonth, 'MMMM yyyy', { locale: th })} {/* แสดงชื่อเดือนภาษาไทย */}
+              </h2>
+              <div className="flex gap-1">
+                <button onClick={prevMonth} className="p-1 sm:p-2 hover:bg-gray-100 rounded text-gray-600"><ChevronLeft size={20} className="sm:size-5" /></button>
+                <button onClick={nextMonth} className="p-1 sm:p-2 hover:bg-gray-100 rounded text-gray-600"><ChevronRight size={20} className="sm:size-5" /></button>
               </div>
-            </form>
+            </div>
+            <button
+              onClick={() => { setSelectedDate(new Date()); setIsModalOpen(true); }}
+              className="bg-blue-600 text-white px-3 sm:px-4 py-2 rounded-lg hover:bg-blue-700 flex items-center gap-1 sm:gap-2 shadow-sm text-sm sm:text-base w-full sm:w-auto justify-center sm:justify-start"
+            >
+              <Plus size={20} /> <span className="hidden sm:inline">สร้างงานวันนี้</span>
+            </button>
+          </div>
 
-            {/* List งานของวันนี้ที่มีอยู่แล้ว (เผื่ออยากลบ) */}
-            <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t">
-              <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">งานในวันนี้</h4>
-              <div className="space-y-1 sm:space-y-2 max-h-40 overflow-y-auto">
-                {tasks
-                  .filter(t => isSameDay(parseISO(t.date), selectedDate))
-                  .map(t => (
-                    <div key={t.id} className="flex justify-between items-center text-xs sm:text-sm p-2 bg-gray-50 rounded group">
-                      <span className={t.isDone ? 'line-through text-gray-400 truncate' : 'truncate'}>{t.title}</span>
-                      <button onClick={() => deleteTask(t.id)} className="text-red-400 opacity-0 group-hover:opacity-100 hover:text-red-600 shrink-0 ml-2">
-                        <Trash2 size={16} />
-                      </button>
+          {/* ตัวปฏิทิน */}
+          <div className="bg-white rounded-b-lg shadow overflow-hidden">
+            {renderCalendar()}
+          </div>
+        </main>
+
+        {/* --- Modal เพิ่มงาน --- */}
+        {isModalOpen && selectedDate && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-3 sm:p-4" onClick={() => setIsModalOpen(false)}>
+            <div className="bg-white rounded-xl shadow-xl w-full max-w-lg p-6 sm:p-8 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+              <div className="flex justify-between items-start gap-2 mb-4">
+                <h3 className="text-base sm:text-lg font-semibold text-gray-800">
+                  เพิ่มงานวันที่ {format(selectedDate, 'd MMM yyyy', { locale: th })}
+                </h3>
+                <button onClick={() => setIsModalOpen(false)} className="text-gray-400 hover:text-gray-600 shrink-0">
+                  <X size={24} />
+                </button>
+              </div>
+
+              <form onSubmit={handleAddTask}>
+                <input
+                  autoFocus
+                  type="text"
+                  placeholder="พิมพ์ชื่อรายการงาน..."
+                  className="w-full border rounded-lg p-2 sm:p-3 focus:ring-2 focus:ring-blue-500 outline-none mb-3 sm:mb-4 text-sm"
+                  value={newTaskTitle}
+                  onChange={e => setNewTaskTitle(e.target.value)}
+                />
+                <textarea
+                  placeholder='รายละเอียด'
+                  className="w-full border rounded-lg p-2 sm:p-3 focus:ring-2 focus:ring-blue-500 outline-none mb-3 sm:mb-4 text-sm resize-none"
+                  rows={3}
+                  value={newTaskDescription}
+                  onChange={e => setNewTaskDescription(e.target.value)}
+                />
+                <div className="flex justify-end gap-2">
+                  <button type="button" onClick={() => setIsModalOpen(false)} className="px-3 sm:px-4 py-2 text-sm text-gray-600 hover:bg-gray-100 rounded-lg">ยกเลิก</button>
+                  <button type="submit" className="px-3 sm:px-4 py-2 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">บันทึก</button>
+                </div>
+              </form>
+
+              {/* List งานของวันนี้ที่มีอยู่แล้ว (เผื่ออยากลบ) */}
+              <div className="mt-4 sm:mt-6 pt-3 sm:pt-4 border-t">
+                <h4 className="text-xs sm:text-sm font-medium text-gray-500 mb-2">งานในวันนี้</h4>
+                <div className="space-y-1 sm:space-y-2 max-h-40 overflow-y-auto">
+                  {tasks
+                    .filter(t => isSameDay(parseISO(t.date), selectedDate))
+                    .map(t => (
+                      <div key={t.id} className="flex justify-between items-center text-xs sm:text-sm p-2 bg-gray-50 rounded group">
+                        {/* 👈 เปลี่ยนให้คลิกที่ชื่อเพื่อเปิดแก้ หรือติ๊กถูก */}
+                        <div className="flex-1 cursor-pointer" onClick={() => toggleTask(t)}>
+                          <span className={t.isDone ? 'line-through text-gray-400 truncate' : 'truncate text-gray-700'}>
+                            {t.title}
+                          </span>
+                        </div>
+
+                        {/* ปุ่มจัดการ */}
+                        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => openEditModal(t)} className="p-1 text-blue-500 hover:text-blue-700 hover:bg-blue-100 rounded">
+                            <Edit size={16} />
+                          </button>
+                          <button onClick={() => deleteTask(t.id)} className="p-1 text-red-500 hover:text-red-700 hover:bg-red-100 rounded">
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  {editingTask && (
+                    <div className="fixed inset-0 bg-black/60 flex items-center justify-center z-[60] p-4" onClick={() => setEditingTask(null)}>
+                      <div className="bg-white rounded-xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+                        <div className="flex justify-between items-center mb-4">
+                          <h3 className="text-lg font-bold text-gray-800">แก้ไขงาน</h3>
+                          <button onClick={() => setEditingTask(null)} className="text-gray-400 hover:text-gray-600">
+                            <X size={24} />
+                          </button>
+                        </div>
+
+                        <form onSubmit={handleEditTask}>
+                          <div className="mb-4">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">ชื่องาน</label>
+                            <input
+                              type="text"
+                              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50"
+                              value={editTitle}
+                              onChange={e => setEditTitle(e.target.value)}
+                              required
+                            />
+                          </div>
+                          <div className="mb-6">
+                            <label className="block text-sm font-medium text-gray-700 mb-1">รายละเอียด</label>
+                            <textarea
+                              className="w-full border rounded-lg p-3 focus:ring-2 focus:ring-blue-500 outline-none bg-gray-50 min-h-[120px]"
+                              value={editDescription}
+                              onChange={e => setEditDescription(e.target.value)}
+                            />
+                          </div>
+
+                          <div className="flex justify-end gap-3">
+                            <button type="button" onClick={() => setEditingTask(null)} className="px-4 py-2 text-gray-600 hover:bg-gray-100 rounded-lg font-medium">
+                              ยกเลิก
+                            </button>
+                            <button type="submit" className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium shadow-md">
+                              บันทึกการแก้ไข
+                            </button>
+                          </div>
+                        </form>
+                      </div>
                     </div>
-                  ))}
-                {tasks.filter(t => isSameDay(parseISO(t.date), selectedDate)).length === 0 && (
-                  <p className="text-xs text-gray-400 text-center">ว่างเปล่า...</p>
-                )}
+                  )}
+                  {tasks.filter(t => isSameDay(parseISO(t.date), selectedDate)).length === 0 && (
+                    <p className="text-xs text-gray-400 text-center">ว่างเปล่า...</p>
+                  )}
+                </div>
               </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
       </div>
+      <Toaster position='top-right' reverseOrder={false} />
     </div>
   )
 }
