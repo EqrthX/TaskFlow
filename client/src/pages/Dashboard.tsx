@@ -72,8 +72,8 @@ const Dashboard = () => {
 
       toast.success('แก้ไขงานสำเร็จ!');
       setEditingTask(null); // ปิด Modal
-    } catch (error) {
-      toast.error('แก้ไขไม่สำเร็จ');
+    } catch (error: any) {
+      toast.error('แก้ไขไม่สำเร็จ', error.response?.data?.message || '');
     }
   };
 
