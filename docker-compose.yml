@@ -13,5 +13,28 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
 
+  server:
+    build:
+      context: ./server
+      dockerfile: Dockerfile
+    container_name: taskflow_backend
+    environment:
+      - JWT_SECRET=my-secret-key-change-it-later
+      - DATABASE_URL=postgresql://admin:admin123@postgres:5432/taskflow?schema=public # 👈 เชื่อม DB ผ่านชื่อ service 'postgres'
+    ports:
+      - "3231:3231"
+    depends_on:
+      - postgres
+  
+  client:
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    container_name: client_react
+    environment:
+      - VITE_API_URL=http://localhost:3231/api
+    ports:
+      - "5173:5173"
+    
 volumes:
   postgres_data:
