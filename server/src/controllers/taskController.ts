@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { Response } from "express";
 import logger from "../config/logger";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { AddTaskServices, DeleteTaskServices, UpdateTaskServices, UpdateTaskStatusServices } from "../services/taskServices";
@@ -26,15 +26,18 @@ export const AddTasks = async (req: AuthRequest, res: Response) => {
             message: "เพิ่มงานสำเร็จ",
             data: newTask
         })
-    } catch (error: any) {
-        if (error.message === "TASKS_NOTFOUND") {
-            logger.error(`Error Controller AddTasks Email:${error.message} ${new Date().toDateString()}`)
-            return res.status(400).json({ error: "ไม่มีข้อมูลงานที่กรอกเข้ามา" });
+    } catch (error: unknown) {
+        
+        if(error instanceof Error) {
+            if (error.message === "TASKS_NOTFOUND") {
+                logger.error(`Error Controller AddTasks Email:${error.message} ${new Date().toDateString()}`)
+                return res.status(400).json({ error: "ไม่มีข้อมูลงานที่กรอกเข้ามา" });
+            }
+            res.status(500).json({
+                error: "Something went wrong to AddTasks",
+                detail: error.message
+            })
         }
-        res.status(500).json({
-            error: "Something went wrong to AddTasks",
-            detail: error.message
-        })
     }
 }
 
@@ -51,11 +54,13 @@ export const showTasks = async (req: AuthRequest, res: Response) => {
         return res.status(200).json({
             tasks: result
         })
-    } catch (error: any) {
-        res.status(500).json({
-            error: "Something went wrong to AddTasks",
-            detail: error.message
-        })
+    } catch (error: unknown) {
+        if(error instanceof Error) {
+            res.status(500).json({
+                error: "Something went wrong to AddTasks",
+                detail: error.message
+            })
+        }
     }
 }
 
@@ -73,8 +78,8 @@ export const UpdateStatusTask = async (req: AuthRequest, res: Response) => {
             message: "อัพเดตสถานะงานเสร็จสิ้น",
             data: updateTask
         })
-    } catch (error: any) {
-        return res.status(400).json({ error: error.message });
+    } catch (error: unknown) {
+        if(error instanceof Error) return res.status(400).json({ error: error.message });
     }
 }
 
@@ -92,9 +97,15 @@ export const UpdateTask = async (req: AuthRequest, res: Response) => {
             message:"อัพเดตข้อมูลเสร็จสิ้น",
             newUpdateTask
         })
-    } catch (error) {
+    } catch (error: unknown) {
+        let errorMessage = "เกิดข้อผิดพลาดในการอัพเดท";
+
+        if(error instanceof Error){
+            errorMessage = error.message
+        }
+
         return res.status(400).json({
-            message:"เกิดข้อผิดพลาดในการอัพเดท"
+            message: errorMessage
         })
     }
 }
@@ -112,7 +123,8 @@ export const DeleteTask = async (req: AuthRequest, res:Response) => {
             data: deleteTask
         })
         
-    } catch (error: any) {
+    } catch (error: unknown) {
+        if(error instanceof Error)
         return res.status(400).json({
             message: error.message
         })

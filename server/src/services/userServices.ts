@@ -79,8 +79,8 @@ export const refreshTokenService = async(tokenFromClient: string) => {
 
     try {
         decoded = jwt.verify(tokenFromClient, process.env.JWT_REFRESH_SECRET || 'refresh-secret')
-    } catch (error) {
-        throw new Error("INVALID_REFRESH_TOKEN");
+    } catch (error: unknown) {
+        if(error instanceof Error) throw new Error("INVALID_REFRESH_TOKEN", { cause: error });
     }
 
     const user = await prisma.user.findUnique({

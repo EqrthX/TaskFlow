@@ -36,10 +36,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const userServices = __importStar(require("../../src/services/userServices"));
-const db_1 = __importDefault(require("../../src/config/db"));
-const bcrypt_1 = __importDefault(require("bcrypt"));
-const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
+const userServices = __importStar(import("../../src/services/userServices"));
+const db_1 = __importDefault(import("../../src/config/db"));
+const bcrypt_1 = __importDefault(import("bcrypt"));
+const jsonwebtoken_1 = __importDefault(import("jsonwebtoken"));
 jest.mock('../../src/config/db', () => ({
     user: {
         findUnique: jest.fn(),

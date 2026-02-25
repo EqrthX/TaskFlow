@@ -1,13 +1,13 @@
 import prisma from "../config/db";
 
-export const AddTaskServices = async (data: any) => {
+export const AddTaskServices = async (title:string, description:string, date:Date, userId: string) => {
 
     const newTask = await prisma.task.create({
         data: {
-            title: data.title,
-            description: data.description, 
-            date: data.date,               
-            userId: data.userId            
+            title: title,
+            description: description, 
+            date: date,               
+            userId: userId            
         }
     });
 

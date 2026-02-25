@@ -2,9 +2,9 @@ import { Request, Response } from "express";
 import { LoginRequest, RegisterRequest } from "../types/userTypes"
 import { LoginService, refreshTokenService, RegisterServices } from "../services/userServices";
 import logger from "../config/logger";
-import {isValidEmail} from  '../utils/regEx';
+import { isValidEmail } from '../utils/regEx';
 
-export const Registination = async (req: Request<{}, {}, RegisterRequest>, res: Response) => {
+export const Registination = async (req: Request<RegisterRequest>, res: Response) => {
     logger.info(`Start Controller Registination ${new Date().toDateString()}`);
     const { email, password, passwordCon, first_name, last_name } = req.body;
     logger.info(`Request Data to register ${req.body}`);
@@ -29,34 +29,36 @@ export const Registination = async (req: Request<{}, {}, RegisterRequest>, res: 
             message: "สมัครสมาชิกเสร็จสิ้น",
             data: newUser
         })
-    } catch (error: any) {
-        if (error.message === "EMAIL_EXISTS") {
-            logger.error(`Error Controller Registination Email:${error.message} ${new Date().toDateString()}`)
-            return res.status(400).json({ error: "อีเมลนี้ถูกใช้งานแล้ว" });
-        }
+    } catch (error: unknown) {
+        if (error instanceof Error) {
+            if (error.message === "EMAIL_EXISTS") {
+                logger.error(`Error Controller Registination Email:${error.message} ${new Date().toDateString()}`)
+                return res.status(400).json({ error: "อีเมลนี้ถูกใช้งานแล้ว" });
+            }
 
-        if (error.message === "PASSWORD_NOT_MATCH") {
-            logger.error(`Error Controller Registination Password:${error.message} ${new Date().toDateString()}`)
-            return res.status(400).json({ error: "รหัสผ่านไม่ตรงกัน" });
+            if (error.message === "PASSWORD_NOT_MATCH") {
+                logger.error(`Error Controller Registination Password:${error.message} ${new Date().toDateString()}`)
+                return res.status(400).json({ error: "รหัสผ่านไม่ตรงกัน" });
+            }
+            res.status(500).json({
+                error: "Something went wrong to Registination",
+                detail: error.message
+            })
         }
-        res.status(500).json({ 
-            error: "Something went wrong to Registination", 
-            detail: error.message 
-        })
     }
 }
 
-export const Login = async (req: Request<{}, {}, LoginRequest>, res: Response) => {
+export const Login = async (req: Request<LoginRequest>, res: Response) => {
     logger.info(`Start Controller Login ${new Date().toDateString()}`)
     const { email, password } = req.body;
 
     try {
-        if(!email || !password) {
+        if (!email || !password) {
             return res.status(400).json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน" });
         }
 
-        if(!isValidEmail(email)) {
-            return res.status(400).json({error: "รูปแบบอีเมลไม่ถูกต้อง"})
+        if (!isValidEmail(email)) {
+            return res.status(400).json({ error: "รูปแบบอีเมลไม่ถูกต้อง" })
         }
 
         const result = await LoginService({
@@ -82,8 +84,8 @@ export const Login = async (req: Request<{}, {}, LoginRequest>, res: Response) =
             message: "เข้าสู่ระบบสำเร็จ",
             user: result.user
         })
-    } catch (error) {
-        res.status(500).json({ error: "Somthing went wrong to Login" })
+    } catch (error: unknown) {
+        if(error instanceof Error) return res.status(500).json({ error: "Somthing went wrong to Login" })
     }
 }
 
@@ -105,8 +107,8 @@ export const Logout = async (req: Request, res: Response) => {
 
         // 2. ตอบกลับไปว่า Logout สำเร็จ
         return res.status(200).json({ message: "Logout successfully" });
-    } catch (error) {
-        return res.status(500).json({ error: "Logout failed" });
+    } catch (error: unknown) {
+        if(error instanceof Error) return res.status(500).json({ error: "Logout failed", message: error.message });
     }
 };
 
@@ -132,7 +134,7 @@ export const RefreshToken = async (req: Request, res: Response) => {
 
         return res.status(200).json({ message: "ต่ออายุ Token สำเร็จ" });
 
-    } catch (error: any) {
-        return res.status(403).json({ error: error.message });
+    } catch (error: unknown) {
+        if(error instanceof Error) return res.status(403).json({ error: error.message });
     }
 };

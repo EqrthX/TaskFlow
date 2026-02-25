@@ -36,9 +36,9 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-const taskController = __importStar(require("../../src/controllers/taskController"));
-const taskServices = __importStar(require("../../src/services/taskServices"));
-const db_1 = __importDefault(require("../../src/config/db"));
+const taskController = __importStar(import("../../src/controllers/taskController"));
+const taskServices = __importStar(import("../../src/services/taskServices"));
+const db_1 = __importDefault(import("../../src/config/db"));
 jest.mock('../../src/config/db', () => ({
     task: {
         findMany: jest.fn(),

@@ -33,9 +33,9 @@ var __importStar = (this && this.__importStar) || (function () {
     };
 })();
 Object.defineProperty(exports, "__esModule", { value: true });
-const userController = __importStar(require("../../src/controllers/userController"));
-const userServices = __importStar(require("../../src/services/userServices"));
-const regEx_1 = require("../../src/utils/regEx");
+const userController = __importStar(import("../../src/controllers/userController"));
+const userServices = __importStar(import("../../src/services/userServices"));
+const regEx_1 = import("../../src/utils/regEx");
 jest.mock('../../src/services/userServices');
 jest.mock('../../src/config/logger', () => ({
     info: jest.fn(),

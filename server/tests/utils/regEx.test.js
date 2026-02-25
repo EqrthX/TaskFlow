@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-const regEx_1 = require("../../src/utils/regEx");
+const regEx_1 = import ("../../src/utils/regEx");
 describe('regEx utility', () => {
     describe('isValidEmail', () => {
         it('should return true for valid email addresses', () => {

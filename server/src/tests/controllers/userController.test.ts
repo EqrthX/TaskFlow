@@ -1,4 +1,4 @@
-import { Registination, Login } from '../../controllers/userController';
+import { Registination } from '../../controllers/userController';
 import * as UserServices from '../../services/userServices';
 import { Request, Response } from 'express';
 
