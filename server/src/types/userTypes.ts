@@ -15,7 +15,7 @@ export interface LoginRequest {
 
 export interface AuthRequest {
     user?: {
-        userId: Int16Array;
+        userId: string;
         email: string;
     }
 }

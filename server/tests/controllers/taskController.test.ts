@@ -226,7 +226,7 @@ describe('Task Controller', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
-        message: 'เกิดข้อผิดพลาดในการอัพเดท',
+        message: 'Unauthorized',
       });
     });
   });

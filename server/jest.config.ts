@@ -7,12 +7,14 @@ const config: Config = {
   verbose: true,
   forceExit: true,
   clearMocks: true,
-  transform: {
-    '^.+\\.tsx?$': ['ts-jest', {
-      useESM: true, // ✅ สำคัญ: บอก ts-jest ว่าเราใช้ ESM module
-    }],
+  moduleFileExtensions: ['ts', 'tsx', 'js', 'jsx', 'json', 'node'],
+  globals: {
+    'ts-jest': {
+      tsconfig: {
+        module: 'commonjs',
+      },
+    },
   },
-  extensionsToTreatAsEsm: ['.ts'],
 };
 
 export default config;

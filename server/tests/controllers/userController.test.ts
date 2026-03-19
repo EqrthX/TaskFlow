@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import * as userController from '../../src/controllers/userController';
 import * as userServices from '../../src/services/userServices';
 import { isValidEmail } from '../../src/utils/regEx';
+import { RegisterRequest, LoginRequest } from '../../src/types/userTypes';
 
 jest.mock('../../src/services/userServices');
 jest.mock('../../src/config/logger', () => ({
@@ -38,7 +39,7 @@ describe('User Controller', () => {
       };
 
       await userController.Registination(
-        mockReq as Request,
+        mockReq as unknown as Request<RegisterRequest>,
         mockRes as Response
       );
 
@@ -58,7 +59,7 @@ describe('User Controller', () => {
       };
 
       await userController.Registination(
-        mockReq as Request,
+        mockReq as unknown as Request<RegisterRequest>,
         mockRes as Response
       );
 
@@ -82,7 +83,7 @@ describe('User Controller', () => {
       );
 
       await userController.Registination(
-        mockReq as Request,
+        mockReq as unknown as Request<RegisterRequest>,
         mockRes as Response
       );
 
@@ -111,7 +112,7 @@ describe('User Controller', () => {
       (userServices.RegisterServices as jest.Mock).mockResolvedValueOnce(newUser);
 
       await userController.Registination(
-        mockReq as Request,
+        mockReq as unknown as Request<RegisterRequest>,
         mockRes as Response
       );
 
@@ -127,7 +128,7 @@ describe('User Controller', () => {
     it('should return 400 if email or password is missing', async () => {
       mockReq.body = { email: 'test@example.com' };
 
-      await userController.Login(mockReq as Request, mockRes as Response);
+      await userController.Login(mockReq as unknown as Request<LoginRequest>, mockRes as Response);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -143,7 +144,7 @@ describe('User Controller', () => {
 
       (isValidEmail as jest.Mock).mockReturnValueOnce(false);
 
-      await userController.Login(mockReq as Request, mockRes as Response);
+      await userController.Login(mockReq as unknown as Request<LoginRequest>, mockRes as Response);
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
@@ -164,7 +165,7 @@ describe('User Controller', () => {
         refreshToken: 'refreshToken123',
       });
 
-      await userController.Login(mockReq as Request, mockRes as Response);
+      await userController.Login(mockReq as unknown as Request<LoginRequest>, mockRes as Response);
 
       expect(mockRes.cookie).toHaveBeenCalledTimes(2);
       expect(mockRes.status).toHaveBeenCalledWith(200);

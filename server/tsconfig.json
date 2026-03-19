@@ -1,6 +1,6 @@
 {
   "compilerOptions": {
-    "target": "es2020",
+    "target": "es2022",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
     "outDir": "./dist",    
@@ -9,10 +9,9 @@
     "forceConsistentCasingInFileNames": true,
     "strict": true,
     "skipLibCheck": true,
-    // ✅ แค่บรรทัดนี้บรรทัดเดียวพอครับ สำหรับแก้เรื่อง Jest แดง
+    "isolatedModules": true,
     "types": ["jest", "node"]
   },
-  // ✅ สำคัญ: บอก VS Code ว่าไฟล์ Test ของเราอยู่ที่ไหน
-  "include": ["src/**/*"],    /* 👈 แก้ตรงนี้: ให้รวมแค่ src */  
-  "exclude": ["node_modules", "dist", "tests", "**/*.test.ts"] /* 👈 เพิ่ม tests และไฟล์ .test.ts เข้าไปในรายการยกเว้น */
+  "include": ["src/**/*", "tests/**/*"],
+  "exclude": ["node_modules", "dist"]
 }
