@@ -11,7 +11,7 @@ services:
   server:
     image: nontprawitch/taskflow-server:latest
     ports:
-      - "3231:3000"
+      - "3231:3231"
     depends_on:
       - postgres
     environment:
