@@ -18,7 +18,7 @@ jobs:
         env:
           POSTGRES_USER: test_user
           POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: taskflow_test
+          POSTGRES_DB: taskflow
         ports:
           - 5432:5432
         # Health Check: รอจนกว่า Database จะพร้อมใช้งานจริงๆ
