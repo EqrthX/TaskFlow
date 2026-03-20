@@ -14,7 +14,7 @@ import taskRoute from "./routes/taskRoutes";
 const app = express();
 const allowedOrigins = [
     'http://localhost:5173',
-    'http://74.225.200.27'
+    'https://taskflow-nont.centralindia.cloudapp.azure.com'
 ]
 app.use(cors({
     origin: function (origin, callback) {

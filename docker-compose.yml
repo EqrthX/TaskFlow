@@ -4,6 +4,9 @@ services:
     image: nontprawitch/taskflow-client:latest
     ports:
       - "80:80"  # หรือพอร์ตที่ลูกพี่ตั้งไว้ เช่น "5173:5173"
+      - "443:443"
+    volumes:
+      - /etc/letsencrypt:/etc/letsencrypt:ro  # 🌟 ดึงไฟล์กุญแจ SSL เข้าไปให้ Nginx อ่าน
     depends_on:
       - server
 
