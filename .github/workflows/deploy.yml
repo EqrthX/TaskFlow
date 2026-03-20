@@ -34,6 +34,8 @@ jobs:
           context: ./client  
           push: true
           tags: ${{secrets.DOCKER_USERNAME}}/taskflow-client:latest
+          build-args: |
+            VITE_API_URL=${{secrets.VITE_API_URL}}
 
   deploy:
     needs: build-and-push
