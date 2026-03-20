@@ -2,7 +2,7 @@ name: CD Taskflow
 
 on:
   workflow_run:
-    workflows: ["Node.js CI"]
+    workflows: ["CI and Test"]
     branches: ["main"]
     types:
       - completed
