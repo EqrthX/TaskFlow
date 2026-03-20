@@ -1,11 +1,10 @@
-name: Node.js CI
+name: CI and Test
 
-# 1. Trigger: จะให้เริ่มทำงานตอนไหน?
 on:
   push:
-    branches: [ "main", "master" ] # ทำงานเมื่อ Push เข้า main
+    branches: [ "main" ] 
   pull_request:
-    branches: [ "main", "master" ] # ทำงานเมื่อมีการเปิด PR
+    branches: [ "main" ] 
 
 jobs:
   build-and-test:
