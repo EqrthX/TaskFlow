@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import Sidebar from '../components/Sidebar'
+import FileUpload from '../components/FileUpload'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths,
@@ -39,6 +40,7 @@ const Dashboard = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
+  const [taskFiles, setTaskFiles] = useState<File[]>([])
 
   const openEditModal = (task: Task) => {
     setEditingTask(task)
@@ -107,14 +109,25 @@ const Dashboard = () => {
       return
     }
     try {
-      const res = await api.post('/tasks/add-tasks', {
-        title: newTaskTitle,
-        description: newTaskDescription,
-        date: selectedDate.toISOString(),
+      const formData = new FormData()
+      formData.append('title', newTaskTitle)
+      formData.append('description', newTaskDescription)
+      formData.append('date', selectedDate.toISOString())
+      
+      // Add files to FormData
+      taskFiles.forEach((file) => {
+        formData.append('files', file)
+      })
+
+      const res = await api.post('/tasks/add-tasks', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       })
       setTasks([...tasks, res.data.data])
       setNewTaskTitle('')
       setNewTaskDescription('')
+      setTaskFiles([])
       setIsModalOpen(false)
       toast.success('เพิ่มงานสำเร็จ!')
     } catch {
@@ -411,7 +424,10 @@ const Dashboard = () => {
                   </h3>
                 </div>
                 <button
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false)
+                    setTaskFiles([])
+                  }}
                   className="text-stone-400 hover:text-stone-600 hover:bg-amber-100 p-1 rounded-lg transition-colors shrink-0"
                 >
                   <X size={20} />
@@ -440,10 +456,20 @@ const Dashboard = () => {
                     onChange={e => setNewTaskDescription(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label className={labelClass}>แนบไฟล์ (ทำได้หลายรูป)</label>
+                  <FileUpload 
+                    files={taskFiles} 
+                    onFilesChange={setTaskFiles}
+                  />
+                </div>
                 <div className="flex justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false)
+                      setTaskFiles([])
+                    }}
                     className="px-4 py-2 text-sm text-stone-600 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors"
                   >
                     ยกเลิก

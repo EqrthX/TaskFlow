@@ -34,8 +34,20 @@ model Task {
 
   userId      String
   user        User     @relation(fields: [userId], references: [id])
+
+  attachments Attachment[]
 }
 
+model Attachment {
+  id String @id @default(uuid())
+  url String 
+  fileName String?
+
+  taskId Int
+  task Task @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  createdAt DateTime @default(now())
+}
 // --- 🛡️ ระบบ RBAC (Role-Based Access Control) ---
 
 model Role {
