@@ -21,7 +21,6 @@ const Sidebar: React.FC<SidebarProps> = ({ tasks, isOpen, onClose, onDateFilter 
   const [selectedDateFilter, setSelectedDateFilter] = useState<Date | null>(null)
   const [dateOptionsOpen, setDateOptionsOpen] = useState(false)
 
-  // ตัวเลือกวันที่สำหรับกรอง
   const dateOptions = [
     { label: 'ทั้งหมด', value: null },
     { label: 'วันนี้', value: startOfDay(new Date()) },
@@ -36,89 +35,119 @@ const Sidebar: React.FC<SidebarProps> = ({ tasks, isOpen, onClose, onDateFilter 
     onDateFilter?.(date)
   }
 
-  // กรองงานตามวันที่ถ้ามี
   const filteredTasks = selectedDateFilter
-    ? tasks.filter(task => {
-        const taskDate = new Date(task.date).toDateString()
-        return taskDate === selectedDateFilter.toDateString()
-      })
+    ? tasks.filter(task => new Date(task.date).toDateString() === selectedDateFilter.toDateString())
     : tasks
 
   const filteredCompleted = filteredTasks.filter(t => t.isDone)
   const filteredPending = filteredTasks.filter(t => !t.isDone)
+  const percent = filteredTasks.length > 0
+    ? Math.round((filteredCompleted.length / filteredTasks.length) * 100)
+    : 0
 
   return (
     <>
-      {/* Overlay */}
+      {/* Overlay (mobile) */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
+          className="fixed inset-0 bg-stone-900/40 backdrop-blur-sm z-40 lg:hidden"
           onClick={onClose}
         />
       )}
 
-      {/* Sidebar */}
+      {/* Sidebar panel */}
       <aside
-        className={`fixed top-0 left-0 h-screen w-80 bg-white shadow-lg transform transition-transform duration-300 z-50 overflow-y-auto
-          ${isOpen ? 'translate-x-0' : '-translate-x-full'} lg:translate-x-0 lg:sticky lg:top-0 lg:max-h-screen lg:w-72`}
+        className={`
+          fixed top-0 left-0 h-screen w-72 z-50 overflow-y-auto
+          transform transition-transform duration-300 ease-in-out
+          lg:translate-x-0 lg:sticky lg:top-0 lg:max-h-screen lg:w-64
+          ${isOpen ? 'translate-x-0' : '-translate-x-full'}
+        `}
+        style={{
+          background: '#fdfaf4',
+          borderRight: '1px solid rgba(180,155,110,0.25)',
+          boxShadow: isOpen
+            ? '4px 0 32px rgba(139,109,56,0.14)'
+            : '2px 0 12px rgba(139,109,56,0.08)',
+        }}
       >
-        {/* Header */}
-        <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6">
-          <div className="flex justify-between items-center mb-4">
-            <h2 className="text-2xl font-bold">งานของฉัน</h2>
+        {/* Top accent bar */}
+        <div className="h-[3px] w-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 shrink-0" />
+
+        {/* Notebook margin line */}
+        <div className="absolute left-9 top-3 bottom-3 w-px bg-rose-300/25 pointer-events-none" />
+
+        {/* ── Header ── */}
+        <div className="px-5 pt-5 pb-4 border-b border-dashed border-amber-200">
+          <div className="flex justify-between items-start mb-4">
+            <div>
+              <p className="text-[0.6rem] font-bold text-amber-600 uppercase tracking-widest mb-0.5">
+                สมุดงาน
+              </p>
+              <h2 className="font-serif text-lg font-semibold text-stone-800">งานของฉัน</h2>
+            </div>
             <button
               onClick={onClose}
-              className="lg:hidden text-white hover:bg-blue-800 p-1 rounded"
+              className="lg:hidden text-stone-400 hover:text-stone-600 hover:bg-amber-100 p-1.5 rounded-lg transition-colors"
             >
-              <X size={24} />
+              <X size={18} />
             </button>
           </div>
 
-          {/* Stats Card */}
-          <div className="bg-blue-50/20 rounded-lg p-4 space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-sm font-medium opacity-90">งานทั้งหมด</span>
-              <span className="text-2xl font-bold">{filteredTasks.length}</span>
+          {/* Progress card */}
+          <div className="bg-amber-100/50 border border-amber-200/60 rounded-lg p-3.5">
+            <div className="flex justify-between items-center mb-2">
+              <span className="text-xs text-stone-500 font-medium">งานทั้งหมด</span>
+              <span className="font-serif text-xl font-semibold text-stone-800">
+                {filteredTasks.length}
+              </span>
             </div>
-            <div className="w-full bg-blue-900/20 rounded-full h-2 overflow-hidden">
+            {/* Progress bar */}
+            <div className="w-full bg-amber-200/60 rounded-full h-1.5 overflow-hidden mb-1.5">
               <div
-                className="bg-green-400 h-2 rounded-full transition-all duration-300"
-                style={{ width: `${filteredTasks.length > 0 ? (filteredCompleted.length / filteredTasks.length) * 100 : 0}%` }}
+                className="bg-gradient-to-r from-amber-500 to-green-500 h-1.5 rounded-full transition-all duration-500"
+                style={{ width: `${percent}%` }}
               />
             </div>
-            <div className="flex justify-between text-xs">
-              <span>ความสำเร็จ: {filteredTasks.length > 0 ? Math.round((filteredCompleted.length / filteredTasks.length) * 100) : 0}%</span>
-            </div>
+            <p className="text-[0.65rem] text-stone-400 italic font-serif">
+              ความสำเร็จ {percent}%
+            </p>
           </div>
         </div>
 
-        {/* Date Filter */}
-        <div className="p-4 border-b">
+        {/* ── Date Filter ── */}
+        <div className="px-5 py-3.5 border-b border-amber-200/60">
+          <p className="text-[0.6rem] font-bold text-amber-600 uppercase tracking-widest mb-2">
+            กรองตามวันที่
+          </p>
           <div className="relative">
             <button
               onClick={() => setDateOptionsOpen(!dateOptionsOpen)}
-              className="w-full flex items-center justify-between bg-gray-50 hover:bg-gray-100 border rounded-lg p-3 text-sm font-medium text-gray-700 transition"
+              className="w-full flex items-center justify-between bg-amber-50/60 hover:bg-amber-100/60 border border-amber-200 rounded-lg px-3 py-2 text-sm text-stone-700 font-medium transition-colors"
             >
               <span>
                 {selectedDateFilter
                   ? format(selectedDateFilter, 'dd MMM yyyy', { locale: th })
                   : 'ทั้งหมด'}
               </span>
-              <ChevronDown size={18} className={`transition-transform ${dateOptionsOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown
+                size={16}
+                className={`text-amber-600 transition-transform duration-200 ${dateOptionsOpen ? 'rotate-180' : ''}`}
+              />
             </button>
 
-            {/* Date Options Dropdown */}
             {dateOptionsOpen && (
-              <div className="absolute top-full left-0 right-0 mt-2 bg-white border rounded-lg shadow-lg z-10">
+              <div className="absolute top-full left-0 right-0 mt-1.5 bg-[#fdfaf4] border border-amber-200 rounded-lg shadow-lg z-10 overflow-hidden"
+                style={{ boxShadow: '0 4px 16px rgba(139,109,56,0.12)' }}>
                 {dateOptions.map((option) => (
                   <button
                     key={option.label}
                     onClick={() => handleDateFilter(option.value)}
-                    className={`w-full text-left px-4 py-2 text-sm transition ${
-                      selectedDateFilter?.toDateString() === option.value?.toDateString()
-                        ? 'bg-blue-50 text-blue-600 font-medium'
-                        : 'text-gray-700 hover:bg-gray-50'
-                    }`}
+                    className={`w-full text-left px-4 py-2.5 text-sm transition-colors
+                      ${selectedDateFilter?.toDateString() === option.value?.toDateString()
+                        ? 'bg-amber-100 text-amber-800 font-semibold'
+                        : 'text-stone-600 hover:bg-amber-50'
+                      }`}
                   >
                     {option.label}
                   </button>
@@ -128,77 +157,95 @@ const Sidebar: React.FC<SidebarProps> = ({ tasks, isOpen, onClose, onDateFilter 
           </div>
         </div>
 
-        {/* Task Statistics */}
-        <div className="p-4 space-y-3 border-b">
-          {/* Completed Tasks */}
-          <div className="bg-gradient-to-r from-green-50 to-emerald-50 rounded-lg p-4 border border-green-200">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-green-500 rounded-full p-2">
-                <Check size={20} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-600">เสร็จแล้ว</p>
-                <p className="text-2xl font-bold text-green-600">{filteredCompleted.length}</p>
-              </div>
+        {/* ── Stats cards ── */}
+        <div className="px-5 py-3.5 space-y-2.5 border-b border-amber-200/60">
+          {/* Done */}
+          <div className="flex items-center gap-3 bg-green-50/80 border border-green-200/70 rounded-lg px-3.5 py-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center shadow shadow-green-500/25 shrink-0">
+              <Check size={15} className="text-white" />
+            </div>
+            <div>
+              <p className="text-[0.65rem] text-stone-500 leading-none mb-0.5">เสร็จแล้ว</p>
+              <p className="font-serif text-xl font-semibold text-green-700 leading-none">
+                {filteredCompleted.length}
+              </p>
             </div>
           </div>
 
-          {/* Pending Tasks */}
-          <div className="bg-gradient-to-r from-amber-50 to-orange-50 rounded-lg p-4 border border-amber-200">
-            <div className="flex items-center gap-3 mb-2">
-              <div className="bg-amber-500 rounded-full p-2">
-                <Clock size={20} className="text-white" />
-              </div>
-              <div className="flex-1">
-                <p className="text-sm text-gray-600">รอดำเนิน</p>
-                <p className="text-2xl font-bold text-amber-600">{filteredPending.length}</p>
-              </div>
+          {/* Pending */}
+          <div className="flex items-center gap-3 bg-amber-50/80 border border-amber-200/70 rounded-lg px-3.5 py-3">
+            <div className="w-8 h-8 bg-gradient-to-br from-amber-400 to-amber-600 rounded-full flex items-center justify-center shadow shadow-amber-500/25 shrink-0">
+              <Clock size={15} className="text-white" />
+            </div>
+            <div>
+              <p className="text-[0.65rem] text-stone-500 leading-none mb-0.5">รอดำเนิน</p>
+              <p className="font-serif text-xl font-semibold text-amber-700 leading-none">
+                {filteredPending.length}
+              </p>
             </div>
           </div>
         </div>
 
-        {/* Task List */}
-        <div className="p-4 space-y-2">
-          <h3 className="text-sm font-semibold text-gray-700 mb-4">รายชื่องาน</h3>
+        {/* ── Task list ── */}
+        <div className="px-5 py-4">
+          <div className="flex items-center gap-2 mb-3">
+            <span className="text-[0.6rem] font-bold text-amber-600 uppercase tracking-widest whitespace-nowrap">
+              รายชื่องาน
+            </span>
+            <div className="flex-1 h-px bg-gradient-to-r from-amber-200 to-transparent" />
+          </div>
 
           {filteredTasks.length === 0 ? (
             <div className="text-center py-8">
-              <p className="text-gray-400 text-sm">ไม่มีงานในช่วงเวลานี้</p>
+              <p className="text-sm text-stone-400 italic font-serif">ไม่มีงานในช่วงเวลานี้…</p>
             </div>
           ) : (
-            <div className="space-y-2 max-h-96 overflow-y-auto">
+            <div className="space-y-4 max-h-[calc(100vh-480px)] overflow-y-auto pr-1">
+
+              {/* Pending tasks */}
               {filteredPending.length > 0 && (
-                <>
-                  <p className="text-xs font-medium text-gray-500 mt-3 mb-2">😴 รอดำเนิน ({filteredPending.length})</p>
-                  {filteredPending.map(task => (
-                    <div
-                      key={task.id}
-                      className="bg-white border border-amber-200 rounded-lg p-3 hover:shadow-md transition"
-                    >
-                      <p className="text-sm text-gray-800 line-clamp-2">{task.title}</p>
-                      <p className="text-xs text-gray-500 mt-1">
-                        {format(new Date(task.date), 'd MMM', { locale: th })}
-                      </p>
-                    </div>
-                  ))}
-                </>
+                <div>
+                  <p className="text-[0.6rem] font-bold text-stone-400 uppercase tracking-widest mb-2">
+                    😴 รอดำเนิน ({filteredPending.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {filteredPending.map(task => (
+                      <div
+                        key={task.id}
+                        className="bg-[#fdfaf4] border border-amber-200/80 rounded-lg px-3 py-2.5 hover:border-amber-400/60 hover:shadow-sm transition-all"
+                      >
+                        <p className="text-sm text-stone-700 line-clamp-2 leading-snug">{task.title}</p>
+                        <p className="text-[0.65rem] text-stone-400 mt-1 italic font-serif">
+                          {format(new Date(task.date), 'd MMM', { locale: th })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
 
+              {/* Completed tasks */}
               {filteredCompleted.length > 0 && (
-                <>
-                  <p className="text-xs font-medium text-gray-500 mt-4 mb-2">✨ เสร็จแล้ว ({filteredCompleted.length})</p>
-                  {filteredCompleted.map(task => (
-                    <div
-                      key={task.id}
-                      className="bg-white border border-green-200 rounded-lg p-3 hover:shadow-md transition opacity-70"
-                    >
-                      <p className="text-sm text-gray-500 line-clamp-2 line-through">{task.title}</p>
-                      <p className="text-xs text-gray-400 mt-1">
-                        {format(new Date(task.date), 'd MMM', { locale: th })}
-                      </p>
-                    </div>
-                  ))}
-                </>
+                <div>
+                  <p className="text-[0.6rem] font-bold text-stone-400 uppercase tracking-widest mb-2">
+                    ✨ เสร็จแล้ว ({filteredCompleted.length})
+                  </p>
+                  <div className="space-y-1.5">
+                    {filteredCompleted.map(task => (
+                      <div
+                        key={task.id}
+                        className="bg-green-50/60 border border-green-200/60 rounded-lg px-3 py-2.5 opacity-70 hover:opacity-90 transition-opacity"
+                      >
+                        <p className="text-sm text-stone-400 line-clamp-2 line-through leading-snug">
+                          {task.title}
+                        </p>
+                        <p className="text-[0.65rem] text-stone-400 mt-1 italic font-serif">
+                          {format(new Date(task.date), 'd MMM', { locale: th })}
+                        </p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               )}
             </div>
           )}

@@ -10,6 +10,7 @@ import cookieParser from 'cookie-parser'; // 1. import เข้ามา
 
 import userRoute from "./routes/userRotes";
 import taskRoute from "./routes/taskRoutes";
+import { globalLimiter } from "./middlewares/rateLimitMiddleware.js";
 
 const app = express();
 const allowedOrigins = [
@@ -36,10 +37,11 @@ app.use(
     })
 )
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
-
 app.get("/", (req: Request, res: Response) => {
     res.send("API is running...");
 });
-app.use("/api/auth",userRoute)
+
+app.use("/api", globalLimiter);
+app.use("/api/auth",userRoute);
 app.use("/api/tasks", taskRoute);
 export default app;

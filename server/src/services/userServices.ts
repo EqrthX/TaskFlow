@@ -25,6 +25,11 @@ export const RegisterServices = async (data: RegisterRequest) => {
             password: hashPassword,
             first_name: data.first_name,
             last_name: data.last_name,
+            roles: {
+                create: {
+                    role: {connect: {name: "MEMBER"}}
+                }
+            }
         }
     });
 
@@ -34,7 +39,8 @@ export const RegisterServices = async (data: RegisterRequest) => {
 
 export const LoginService = async (data: LoginRequest) => {
     const findUser = await prisma.user.findUnique({
-        where: {email: data.email}
+        where: {email: data.email},
+        include: {roles: {include: {role: true}}}
     })
 
     if(!findUser) {
@@ -47,8 +53,10 @@ export const LoginService = async (data: LoginRequest) => {
         throw new Error("PASSWORD_INCORRECT")
     }
 
+    const userRoles = findUser.roles.map(r => r.role.name);
+
     const accessToken = jwt.sign(
-        {userId: findUser.id, email: findUser.email},
+        {userId: findUser.id, email: findUser.email, roles: userRoles},
         process.env.JWT_SECRET || "my-secret-key-change-it-later",
         {expiresIn: "1d"}
     )

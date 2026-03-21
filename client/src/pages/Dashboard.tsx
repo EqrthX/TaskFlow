@@ -5,7 +5,7 @@ import Sidebar from '../components/Sidebar'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths,
-  parseISO,
+  parseISO, isBefore, startOfDay,
 } from 'date-fns'
 import toast, { Toaster } from 'react-hot-toast'
 import { th } from 'date-fns/locale'
@@ -102,6 +102,10 @@ const Dashboard = () => {
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!newTaskTitle.trim() || !selectedDate || !newTaskDescription.trim()) return
+    if (isBefore(startOfDay(selectedDate), startOfDay(new Date()))) {
+      toast.error('ไม่สามารถเพิ่มงานในวันที่ผ่านมาแล้ว')
+      return
+    }
     try {
       const res = await api.post('/tasks/add-tasks', {
         title: newTaskTitle,
@@ -163,6 +167,7 @@ const Dashboard = () => {
           const dayTasks = tasks.filter(task => isSameDay(parseISO(task.date), dayItem))
           const isToday = isSameDay(dayItem, new Date())
           const isCurrentMonth = isSameMonth(dayItem, monthStart)
+          const isPastDate = isBefore(startOfDay(dayItem), startOfDay(new Date()))
 
           return (
             <div
@@ -173,7 +178,7 @@ const Dashboard = () => {
                 relative group cursor-pointer flex flex-col transition-colors
                 ${!isCurrentMonth ? 'bg-amber-50/30' : 'bg-[#fdfaf4]'}
                 ${isToday ? 'bg-amber-100/50' : ''}
-                hover:bg-amber-100/40
+                ${isPastDate ? 'bg-stone-100/50 opacity-50' : 'hover:bg-amber-100/40'}
               `}
             >
               {/* Date number */}
@@ -185,7 +190,9 @@ const Dashboard = () => {
                 `}>
                   {format(dayItem, 'd')}
                 </span>
-                <button className="opacity-0 group-hover:opacity-100 text-amber-600 hover:bg-amber-200/60 rounded-full p-0.5 hidden sm:flex transition-opacity">
+                <button className={`opacity-0 group-hover:opacity-100 rounded-full p-0.5 hidden sm:flex transition-opacity ${
+                  isPastDate ? 'text-stone-300' : 'text-amber-600 hover:bg-amber-200/60'
+                }`}>
                   <Plus size={12} />
                 </button>
               </div>
@@ -221,12 +228,11 @@ const Dashboard = () => {
     )
   }
 
-  // ── Loading screen ─────────────────────────────────────────
   if (isLoading) {
     return (
       <div className="min-h-screen min-h-dvh bg-amber-50 flex flex-col items-center justify-center"
         style={{ backgroundImage: "radial-gradient(ellipse at 30% 50%, rgba(210,180,140,0.2) 0%, transparent 60%)" }}>
-        <div className="w-12 h-12 mb-4 bg-gradient-to-br from-amber-400 to-amber-700 rounded-xl flex items-center justify-center text-2xl shadow-lg shadow-amber-600/25 animate-pulse">
+        <div className="w-12 h-12 mb-4 bg-linear-to-br from-amber-400 to-amber-700 rounded-xl flex items-center justify-center text-2xl shadow-lg shadow-amber-600/25 animate-pulse">
           📝
         </div>
         <Loader2 className="w-6 h-6 text-amber-600 animate-spin mb-3" />

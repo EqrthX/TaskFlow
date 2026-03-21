@@ -104,7 +104,7 @@ export const Logout = async (req: Request, res: Response) => {
             secure: process.env.NODE_ENV === "production",
             sameSite: "lax",
         });
-
+        
         // 2. ตอบกลับไปว่า Logout สำเร็จ
         return res.status(200).json({ message: "Logout successfully" });
     } catch (error: unknown) {
