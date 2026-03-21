@@ -8,7 +8,7 @@
 
 | Layer | Technology |
 |-------|-----------|
-| Frontend | React / Next.js |
+| Frontend | React |
 | Backend | Node.js / Express |
 | Database | PostgreSQL |
 | Container | Docker / Docker Compose |
@@ -50,7 +50,7 @@ cd TaskFlow
 ### 2. ตั้งค่า Environment Variables
 
 ```bash
-cp .env.example .env
+.env
 # แก้ไขค่าต่างๆ ใน .env ให้ตรงกับ environment ของตัวเอง
 ```
 
@@ -58,8 +58,8 @@ cp .env.example .env
 
 ```env
 DATABASE_URL=postgresql://user:password@localhost:5432/taskflow
-PORT=3001
-NEXT_PUBLIC_API_URL=http://localhost:3001
+PORT=3231
+VITE_API_URL=http://localhost:3231
 ```
 
 ### 3. รันด้วย Docker Compose (แนะนำ)
@@ -68,7 +68,7 @@ NEXT_PUBLIC_API_URL=http://localhost:3001
 docker compose up --build
 ```
 
-จากนั้นเปิด browser ที่ `http://localhost:3000`
+จากนั้นเปิด browser ที่ `http://localhost:3231`
 
 ### 4. รันแบบ Manual (Development)
 
