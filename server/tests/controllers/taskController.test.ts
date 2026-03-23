@@ -9,13 +9,33 @@ jest.mock('../../src/config/db', () => ({
   },
 }));
 jest.mock('../../src/services/azureStorage', () => ({
-    uploadImageToAzure: jest.fn()
+  uploadImageToAzure: jest.fn()
 }));
 jest.mock('../../src/services/taskServices');
 jest.mock('../../src/config/logger', () => ({
   info: jest.fn(),
   error: jest.fn(),
 }));
+
+
+
+jest.mock('../../src/config/redis', () => {
+  // สร้าง Mock Object ไว้ด้านใน factory function นี้เลย
+  const mClient = {
+    get: jest.fn(),
+    set: jest.fn(),
+    del: jest.fn(),
+    isReady: true,
+  };
+  
+  return {
+    __esModule: true,
+    default: mClient,
+    ...mClient // ใส่เผื่อไว้สำหรับการ import ทั้งแบบ Default และ Named
+  };
+});
+
+import redisClient from '../../src/config/redis';
 
 describe('Task Controller', () => {
   let mockReq: Partial<AuthRequest>;
@@ -94,49 +114,68 @@ describe('Task Controller', () => {
   });
 
   describe('showTasks', () => {
-    it('should return all tasks for the user', async () => {
-      const tasks = [
+
+    it('ควรคืนค่าข้อมูลจาก Redis Cache ถ้ามีข้อมูลอยู่ (Cache Hit)', async () => {
+      const cachedTasks = [
         {
           id: 1,
-          title: 'Task 1',
-          description: 'Desc 1',
-          date: new Date('2024-03-01'),
+          title: 'Cached Task',
+          description: 'Desc',
+          date: new Date('2024-03-01').toISOString(),
           userId: '1',
           isDone: false,
-        },
+        }
+      ];
+
+      // จำลองให้ Redis หาข้อมูลเจอ
+      (redisClient.get as jest.Mock).mockResolvedValueOnce(JSON.stringify(cachedTasks));
+
+      await taskController.showTasks(mockReq as AuthRequest, mockRes as Response);
+
+      // เปลี่ยนชื่อ key เป็น 'tasks:1' ให้ตรงกับ cacheKey ใน controller
+      expect(redisClient.get).toHaveBeenCalledWith('tasks:1');
+      expect(prisma.task.findMany).not.toHaveBeenCalled();
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({ tasks: cachedTasks });
+    });
+
+    it('ควรดึงข้อมูลจาก Database และบันทึกลง Redis ถ้าไม่มี Cache (Cache Miss)', async () => {
+      const dbTasks = [
         {
           id: 2,
-          title: 'Task 2',
-          description: 'Desc 2',
+          title: 'DB Task',
+          description: 'Desc',
           date: new Date('2024-03-02'),
           userId: '1',
           isDone: true,
-        },
+        }
       ];
 
-      (prisma.task.findMany as jest.Mock).mockResolvedValueOnce(tasks);
+      (redisClient.get as jest.Mock).mockResolvedValueOnce(null);
+      (prisma.task.findMany as jest.Mock).mockResolvedValueOnce(dbTasks);
 
       await taskController.showTasks(mockReq as AuthRequest, mockRes as Response);
 
-      expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({ tasks });
+      expect(redisClient.get).toHaveBeenCalledWith('tasks:1');
       expect(prisma.task.findMany).toHaveBeenCalledWith({
         where: { userId: '1' },
-        include: {attachments: true},
+        include: { attachments: true },
         orderBy: { date: 'asc' },
       });
-    });
 
-    it('should return empty array if no tasks exist', async () => {
-      (prisma.task.findMany as jest.Mock).mockResolvedValueOnce([]);
-
-      await taskController.showTasks(mockReq as AuthRequest, mockRes as Response);
+      // ตรวจสอบว่ามีการเซฟข้อมูลลง Redis ด้วยคำสั่ง set (ไม่ใช่ setEx) และระบุ Option EX
+      expect(redisClient.set).toHaveBeenCalledWith(
+        'tasks:1',
+        JSON.stringify(dbTasks),
+        { EX: 3600 }
+      );
 
       expect(mockRes.status).toHaveBeenCalledWith(200);
-      expect(mockRes.json).toHaveBeenCalledWith({ tasks: [] });
+      expect(mockRes.json).toHaveBeenCalledWith({ tasks: dbTasks });
     });
 
     it('should handle database errors', async () => {
+      (redisClient.get as jest.Mock).mockResolvedValueOnce(null);
       (prisma.task.findMany as jest.Mock).mockRejectedValueOnce(new Error('Database error'));
 
       await taskController.showTasks(mockReq as AuthRequest, mockRes as Response);
