@@ -2,6 +2,8 @@ import React, { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import Sidebar from '../components/Sidebar'
+import FileUpload from '../components/FileUpload'
+import TaskDetailModal from '../components/TaskDetailModal'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths,
@@ -11,12 +13,19 @@ import toast, { Toaster } from 'react-hot-toast'
 import { th } from 'date-fns/locale'
 import { LogOut, ChevronLeft, ChevronRight, Plus, Trash2, X, Menu, Loader2, Edit } from 'lucide-react'
 
+interface Attachment {
+  id: string
+  url: string
+  fileName?: string
+}
+
 interface Task {
   id: number
   title: string
   description?: string
   isDone: boolean
   date: string
+  attachments: Attachment[]
 }
 
 interface User {
@@ -39,8 +48,11 @@ const Dashboard = () => {
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
+  const [taskFiles, setTaskFiles] = useState<File[]>([])
+  const [selectedTaskDetail, setSelectedTaskDetail] = useState<Task | null>(null)
 
   const openEditModal = (task: Task) => {
+    setSelectedTaskDetail(null)
     setEditingTask(task)
     setEditTitle(task.title)
     setEditDescription(task.description || '')
@@ -107,14 +119,24 @@ const Dashboard = () => {
       return
     }
     try {
-      const res = await api.post('/tasks/add-tasks', {
-        title: newTaskTitle,
-        description: newTaskDescription,
-        date: selectedDate.toISOString(),
+      const formData = new FormData()
+      formData.append('title', newTaskTitle)
+      formData.append('description', newTaskDescription)
+      formData.append('date', selectedDate.toISOString())
+
+      taskFiles.forEach((file) => {
+        formData.append('images', file)
+      })
+
+      const res = await api.post('/tasks/add-tasks', formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data',
+        },
       })
       setTasks([...tasks, res.data.data])
       setNewTaskTitle('')
       setNewTaskDescription('')
+      setTaskFiles([])
       setIsModalOpen(false)
       toast.success('เพิ่มงานสำเร็จ!')
     } catch {
@@ -140,6 +162,14 @@ const Dashboard = () => {
     } catch {
       toast.error('ลบไม่สำเร็จ กรุณาลองใหม่')
     }
+  }
+
+  const handleTaskUpdate = (updatedTask: Task) => {
+    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t))
+  }
+
+  const handleTaskDelete = (taskId: number) => {
+    setTasks(tasks.filter(t => t.id !== taskId))
   }
 
   // ── Calendar ──────────────────────────────────────────────
@@ -190,9 +220,8 @@ const Dashboard = () => {
                 `}>
                   {format(dayItem, 'd')}
                 </span>
-                <button className={`opacity-0 group-hover:opacity-100 rounded-full p-0.5 hidden sm:flex transition-opacity ${
-                  isPastDate ? 'text-stone-300' : 'text-amber-600 hover:bg-amber-200/60'
-                }`}>
+                <button className={`opacity-0 group-hover:opacity-100 rounded-full p-0.5 hidden sm:flex transition-opacity ${isPastDate ? 'text-stone-300' : 'text-amber-600 hover:bg-amber-200/60'
+                  }`}>
                   <Plus size={12} />
                 </button>
               </div>
@@ -202,7 +231,7 @@ const Dashboard = () => {
                 {dayTasks.slice(0, 3).map(task => (
                   <div
                     key={task.id}
-                    onClick={(e) => { e.stopPropagation(); toggleTask(task) }}
+                    onClick={(e) => { e.stopPropagation(); setSelectedTaskDetail(task) }}
                     className={`
                       text-[0.55rem] sm:text-[0.65rem] px-1 sm:px-1.5 py-0.5 rounded
                       truncate flex items-center gap-1 transition-all cursor-pointer
@@ -411,7 +440,10 @@ const Dashboard = () => {
                   </h3>
                 </div>
                 <button
-                  onClick={() => setIsModalOpen(false)}
+                  onClick={() => {
+                    setIsModalOpen(false)
+                    setTaskFiles([])
+                  }}
                   className="text-stone-400 hover:text-stone-600 hover:bg-amber-100 p-1 rounded-lg transition-colors shrink-0"
                 >
                   <X size={20} />
@@ -440,10 +472,20 @@ const Dashboard = () => {
                     onChange={e => setNewTaskDescription(e.target.value)}
                   />
                 </div>
+                <div>
+                  <label className={labelClass}>แนบไฟล์ (ทำได้หลายรูป)</label>
+                  <FileUpload
+                    files={taskFiles}
+                    onFilesChange={setTaskFiles}
+                  />
+                </div>
                 <div className="flex justify-end gap-2 pt-1">
                   <button
                     type="button"
-                    onClick={() => setIsModalOpen(false)}
+                    onClick={() => {
+                      setIsModalOpen(false)
+                      setTaskFiles([])
+                    }}
                     className="px-4 py-2 text-sm text-stone-600 hover:bg-amber-100 border border-amber-200 rounded-lg transition-colors"
                   >
                     ยกเลิก
@@ -473,7 +515,7 @@ const Dashboard = () => {
                       >
                         <div
                           className="flex items-center gap-2 flex-1 cursor-pointer min-w-0"
-                          onClick={() => toggleTask(t)}
+                          onClick={() => setSelectedTaskDetail(t)}
                         >
                           <div className={`w-2 h-2 rounded-full shrink-0 ${t.isDone ? 'bg-green-500' : 'bg-amber-500'}`} />
                           <span className={`text-sm truncate ${t.isDone ? 'line-through text-stone-400' : 'text-stone-700'}`}>
@@ -572,6 +614,18 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Task Detail Modal ── */}
+      {selectedTaskDetail && (
+        <TaskDetailModal
+          task={selectedTaskDetail}
+          isOpen={!!selectedTaskDetail}
+          onClose={() => setSelectedTaskDetail(null)}
+          onTaskUpdate={handleTaskUpdate}
+          onTaskDelete={handleTaskDelete}
+          onEditClick={openEditModal}
+        />
       )}
 
       <Toaster

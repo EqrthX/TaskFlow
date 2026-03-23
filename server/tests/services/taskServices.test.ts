@@ -37,12 +37,19 @@ describe('Task Services', () => {
 
       expect(result).toEqual(mockTask);
       expect(prisma.task.create).toHaveBeenCalledWith({
-        data: {
-          title: taskData.title,
-          description: taskData.description,
-          date: taskData.date,
-          userId: taskData.userId,
-        },
+          data: {
+              title: taskData.title,
+              description: taskData.description,
+              date: taskData.date,
+              userId: taskData.userId,
+              // 🌟 เพิ่ม 2 ก้อนนี้เข้าไปให้ตรงกับของใหม่
+              attachments: {
+                  create: taskData.attachments || undefined
+              }
+          },
+          include: {
+              attachments: true
+          }
       });
     });
 

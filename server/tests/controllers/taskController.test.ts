@@ -3,13 +3,14 @@ import * as taskController from '../../src/controllers/taskController';
 import * as taskServices from '../../src/services/taskServices';
 import { AuthRequest } from '../../src/middlewares/authMiddleware';
 import prisma from '../../src/config/db';
-
 jest.mock('../../src/config/db', () => ({
   task: {
     findMany: jest.fn(),
   },
 }));
-
+jest.mock('../../src/services/azureStorage', () => ({
+    uploadImageToAzure: jest.fn()
+}));
 jest.mock('../../src/services/taskServices');
 jest.mock('../../src/config/logger', () => ({
   info: jest.fn(),
@@ -121,6 +122,7 @@ describe('Task Controller', () => {
       expect(mockRes.json).toHaveBeenCalledWith({ tasks });
       expect(prisma.task.findMany).toHaveBeenCalledWith({
         where: { userId: '1' },
+        include: {attachments: true},
         orderBy: { date: 'asc' },
       });
     });
@@ -227,6 +229,149 @@ describe('Task Controller', () => {
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
         message: 'Unauthorized',
+      });
+    });
+  });
+
+  describe('DeleteTask', () => {
+    it('should successfully delete a task', async () => {
+      mockReq.params = { id: '1' };
+
+      const deletedTask = {
+        id: 1,
+        title: 'Test Task',
+        userId: '1',
+      };
+
+      (taskServices.DeleteTaskServices as jest.Mock).mockResolvedValueOnce(deletedTask);
+
+      await taskController.DeleteTask(mockReq as AuthRequest, mockRes as Response);
+
+      expect(mockRes.status).toHaveBeenCalledWith(200);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'ลบงานเสร็จสิ้น',
+        data: deletedTask,
+      });
+      expect(taskServices.DeleteTaskServices).toHaveBeenCalledWith(1, '1');
+    });
+
+    it('should handle task not found error', async () => {
+      mockReq.params = { id: '999' };
+
+      (taskServices.DeleteTaskServices as jest.Mock).mockRejectedValueOnce(
+        new Error('Task not found')
+      );
+
+      await taskController.DeleteTask(mockReq as AuthRequest, mockRes as Response);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Task not found',
+      });
+    });
+
+    it('should handle unauthorized deletion', async () => {
+      mockReq.params = { id: '1' };
+
+      (taskServices.DeleteTaskServices as jest.Mock).mockRejectedValueOnce(
+        new Error('Unauthorized to delete this task')
+      );
+
+      await taskController.DeleteTask(mockReq as AuthRequest, mockRes as Response);
+
+      expect(mockRes.status).toHaveBeenCalledWith(400);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'Unauthorized to delete this task',
+      });
+    });
+  });
+
+  describe('AddTasks with file uploads', () => {
+    it('should add task with multiple file attachments', async () => {
+      const mockFiles: Express.Multer.File[] = [
+        {
+          fieldname: 'files',
+          originalname: 'document.pdf',
+          encoding: '7bit',
+          mimetype: 'application/pdf',
+          size: 12345,
+          destination: '/uploads',
+          filename: 'doc1.pdf',
+          path: '/uploads/doc1.pdf',
+          buffer: Buffer.from(''),
+          stream: null as any,
+        },
+        {
+          fieldname: 'files',
+          originalname: 'image.png',
+          encoding: '7bit',
+          mimetype: 'image/png',
+          size: 54321,
+          destination: '/uploads',
+          filename: 'img1.png',
+          path: '/uploads/img1.png',
+          buffer: Buffer.from(''),
+          stream: null as any,
+        },
+      ];
+
+      mockReq.body = {
+        title: 'Task with attachments',
+        description: 'Task with multiple files',
+        date: '2024-03-15',
+      };
+      mockReq.files = mockFiles;
+
+      const newTask = {
+        id: 1,
+        title: 'Task with attachments',
+        description: 'Task with multiple files',
+        date: new Date('2024-03-15'),
+        userId: '1',
+        isDone: false,
+        attachments: [
+          { url: 'https://azure.blob.com/doc1.pdf', fileName: 'document.pdf' },
+          { url: 'https://azure.blob.com/img1.png', fileName: 'image.png' },
+        ],
+      };
+
+      (taskServices.AddTaskServices as jest.Mock).mockResolvedValueOnce(newTask);
+
+      await taskController.AddTasks(mockReq as AuthRequest, mockRes as Response);
+
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'เพิ่มงานสำเร็จ',
+        data: newTask,
+      });
+    });
+
+    it('should add task without file attachments', async () => {
+      mockReq.body = {
+        title: 'Simple Task',
+        description: 'Task without files',
+        date: '2024-03-20',
+      };
+      mockReq.files = [];
+
+      const newTask = {
+        id: 2,
+        title: 'Simple Task',
+        description: 'Task without files',
+        date: new Date('2024-03-20'),
+        userId: '1',
+        isDone: false,
+        attachments: [],
+      };
+
+      (taskServices.AddTaskServices as jest.Mock).mockResolvedValueOnce(newTask);
+
+      await taskController.AddTasks(mockReq as AuthRequest, mockRes as Response);
+
+      expect(mockRes.status).toHaveBeenCalledWith(201);
+      expect(mockRes.json).toHaveBeenCalledWith({
+        message: 'เพิ่มงานสำเร็จ',
+        data: newTask,
       });
     });
   });
