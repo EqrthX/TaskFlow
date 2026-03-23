@@ -52,9 +52,8 @@ jobs:
 
             cd ~/TaskFlow
             git pull origin main
-            
-            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
-            echo "AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" >> .env          
+
+            echo "AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" > .env          
             
             docker pull ${{ secrets.DOCKER_USERNAME }}/taskflow-server:latest
             docker pull ${{ secrets.DOCKER_USERNAME }}/taskflow-client:latest
