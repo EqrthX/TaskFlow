@@ -51,7 +51,9 @@ jobs:
             set -e
 
             cd ~/TaskFlow
-            git pull origin main
+
+            git fetch -all
+            git reset --hard origin/main
 
             echo "AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" > .env          
             
