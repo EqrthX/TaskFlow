@@ -144,14 +144,14 @@ const Dashboard = () => {
     }
   }
 
-  const toggleTask = async (task: Task) => {
-    try {
-      setTasks(tasks.map(t => t.id === task.id ? { ...t, isDone: !t.isDone } : t))
-      await api.patch(`/tasks/update-task/${task.id}`, { isDone: !task.isDone })
-    } catch {
-      console.error('Update failed')
-    }
-  }
+  // const toggleTask = async (task: Task) => {
+  //   try {
+  //     setTasks(tasks.map(t => t.id === task.id ? { ...t, isDone: !t.isDone } : t))
+  //     await api.patch(`/tasks/update-task/${task.id}`, { isDone: !task.isDone })
+  //   } catch {
+  //     console.error('Update failed')
+  //   }
+  // }
 
   const deleteTask = async (id: number) => {
     if (!confirm('ลบงานนี้?')) return
