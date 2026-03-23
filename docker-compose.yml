@@ -17,6 +17,7 @@ services:
       - "3231:3231"
     depends_on:
       - postgres
+      - redis
     environment:
       - DATABASE_URL=postgresql://admin:admin123@postgres:5432/taskflow?schema=public
     env_file:
@@ -31,6 +32,12 @@ services:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: taskflow
+  redis:
+    image: redis:alpine
+    container_name: taskflow-redis
+    ports:
+      - "6379:6379"
+    restart: always
 
 volumes:
   taskflow_postgres_data:

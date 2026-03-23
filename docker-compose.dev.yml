@@ -12,6 +12,12 @@ services:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+  redis:
+    image: redis:alpine
+    container_name: taskflow-redis
+    ports:
+      - "6379:6379"
+    restart: always
 
   server:
     build:
@@ -25,6 +31,7 @@ services:
       - "3231:3231"
     depends_on:
       - postgres
+      - redis
   
   client:
     build:

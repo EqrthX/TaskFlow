@@ -36,7 +36,7 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   onEditClick,
 }) => {
   const [isUpdating, setIsUpdating] = useState(false)
-
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   if (!isOpen) return null
 
   const handleStatusToggle = async () => {
@@ -55,7 +55,6 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
   }
 
   const handleDelete = async () => {
-    if (!confirm('ลบงานนี้ ใช่หรือไม่?')) return
     try {
       await api.delete(`/tasks/delete-task/${task.id}`)
       onTaskDelete(task.id)
@@ -168,29 +167,55 @@ const TaskDetailModal: React.FC<TaskDetailModalProps> = ({
 
           {/* Actions Section */}
           <div className="flex gap-2 sm:gap-3 flex-col-reverse sm:flex-row">
-            <button
-              onClick={handleDelete}
-              className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 text-sm text-rose-600 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/60 hover:border-rose-300 rounded-lg font-medium transition-colors"
-            >
-              <Trash2 size={16} />
-              <span>ลบงาน</span>
-            </button>
-            <button
-              onClick={() => {
-                onEditClick(task)
-                onClose()
-              }}
-              className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 text-sm text-amber-600 bg-amber-50/70 hover:bg-amber-100 border border-amber-200/60 hover:border-amber-400 rounded-lg font-medium transition-colors"
-            >
-              <Edit size={16} />
-              <span>แก้ไข</span>
-            </button>
-            <button
-              onClick={onClose}
-              className="flex-1 px-4 py-2.5 text-sm bg-gradient-to-br from-amber-500 to-amber-700 text-amber-50 font-bold rounded-lg shadow-md shadow-amber-600/25 transition-all hover:-translate-y-0.5 sm:hover:-translate-y-0.5"
-            >
-              ปิด
-            </button>
+            {showDeleteConfirm ? (
+              // 🔴 โหมดยืนยันการลบ
+              <div className="flex flex-col sm:flex-row items-center w-full gap-2 sm:gap-3 animate-in fade-in slide-in-from-bottom-2 duration-200">
+                <div className="w-full sm:w-auto flex-1 text-center sm:text-left px-2">
+                  <p className="text-sm font-bold text-rose-600">ยืนยันลบงานนี้?</p>
+                  <p className="text-[0.65rem] text-rose-500">ข้อมูลจะหายไปถาวร</p>
+                </div>
+                <div className="flex gap-2 w-full sm:w-auto">
+                  <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 sm:flex-none px-4 py-2.5 text-sm text-stone-600 bg-stone-100 hover:bg-stone-200 rounded-lg font-medium transition-colors"
+                  >
+                    ยกเลิก
+                  </button>
+                  <button
+                    onClick={handleDelete}
+                    className="flex-1 sm:flex-none px-4 py-2.5 text-sm text-white bg-rose-600 hover:bg-rose-700 shadow-md shadow-rose-600/20 rounded-lg font-bold transition-all"
+                  >
+                    ยืนยันลบ
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <>
+                <button
+                  onClick={() => setShowDeleteConfirm(true)}
+                  className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 text-sm text-rose-600 bg-rose-50/70 hover:bg-rose-100 border border-rose-200/60 hover:border-rose-300 rounded-lg font-medium transition-colors"
+                >
+                  <Trash2 size={16} />
+                  <span>ลบงาน</span>
+                </button>
+                <button
+                  onClick={() => {
+                    onEditClick(task)
+                    onClose()
+                  }}
+                  className="flex items-center justify-center gap-2 flex-1 px-4 py-2.5 text-sm text-amber-600 bg-amber-50/70 hover:bg-amber-100 border border-amber-200/60 hover:border-amber-400 rounded-lg font-medium transition-colors"
+                >
+                  <Edit size={16} />
+                  <span>แก้ไข</span>
+                </button>
+                <button
+                  onClick={onClose}
+                  className="flex-1 px-4 py-2.5 text-sm bg-gradient-to-br from-amber-500 to-amber-700 text-amber-50 font-bold rounded-lg shadow-md shadow-amber-600/25 transition-all hover:-translate-y-0.5"
+                >
+                  ปิด
+                </button>
+              </>
+            )}
           </div>
         </div>
       </div>
