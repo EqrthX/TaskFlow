@@ -19,6 +19,8 @@ services:
       - postgres
     environment:
       - DATABASE_URL=postgresql://admin:admin123@postgres:5432/taskflow?schema=public
+    env_file:
+      - .env
 
   # --- 3. ฐานข้อมูล (DB) ---
   postgres:
