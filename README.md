@@ -76,7 +76,7 @@ Run with Docker Compose
 1.  Clone the repository:
 
 ```Bash
-git clone [https://github.com/your-username/TaskFlow.git](https://github.com/your-username/TaskFlow.git)
+git clone [https://github.com/EqrthX/TaskFlow.git](https://github.com/EqrthX/TaskFlow.git)
 cd TaskFlow
 ```
 2.  Set up your .env files as described above.
