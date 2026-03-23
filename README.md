@@ -54,3 +54,53 @@ DATABASE_URL="postgresql://user:password@host:5432/taskflow_db"
 JWT_SECRET="your_super_secret_jwt_key"
 AZURE_STORAGE_CONNECTION_STRING="DefaultEndpointsProtocol=https;AccountName=...;AccountKey=..."
 REDIS_URL="redis://redis:6379" # Or your local redis url
+```
+**Frontend (`server/.env`):**
+```env
+VITE_API_URL=http://localhost:3231/api
+```
+
+## 🚀 Getting Started (Local Development)
+The easiest way to run the entire stack locally is using Docker Compose.
+
+### Prerequisites
+-  Docker & Docker Compose installed
+
+-  Node.js (v18+)
+
+-  PostgreSQL (if running without Docker)
+
+-  Redis (if running without Docker)
+
+Run with Docker Compose
+1.  Clone the repository:
+
+```Bash
+git clone [https://github.com/your-username/TaskFlow.git](https://github.com/your-username/TaskFlow.git)
+cd TaskFlow
+```
+2.  Set up your .env files as described above.
+
+3.  Build and start the containers:
+
+```Bash
+docker-compose up -d --build
+```
+4.  Run database migrations:
+```Bash
+docker-compose exec server npx prisma db push
+```
+5.  Access the application:
+
+  -  Frontend: http://localhost:5173 (or your mapped port)
+
+  -  Backend API: http://localhost:3231
+
+## 🏗️ CI/CD Architecture
+This project utilizes a modern DevOps workflow:
+
+1.  Push to main: Triggers the GitHub Actions pipeline.
+
+2.  Build & Push: Builds Docker images for both client and server and pushes them to Docker Hub.
+
+3.  Deploy: SSH into the Azure VM, pulls the latest images, recreates the .env file securely from GitHub Secrets, and restarts the containers using docker-compose up -d.
