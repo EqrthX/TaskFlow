@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom'
 import api from '../api/axios'
 import Sidebar from '../components/Sidebar'
 import FileUpload from '../components/FileUpload'
+import TaskDetailModal from '../components/TaskDetailModal'
 import {
   format, startOfMonth, endOfMonth, startOfWeek, endOfWeek,
   eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths,
@@ -12,12 +13,19 @@ import toast, { Toaster } from 'react-hot-toast'
 import { th } from 'date-fns/locale'
 import { LogOut, ChevronLeft, ChevronRight, Plus, Trash2, X, Menu, Loader2, Edit } from 'lucide-react'
 
+interface Attachment {
+  id: string
+  url: string
+  fileName?: string
+}
+
 interface Task {
   id: number
   title: string
   description?: string
   isDone: boolean
   date: string
+  attachments: Attachment[]
 }
 
 interface User {
@@ -41,8 +49,10 @@ const Dashboard = () => {
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [taskFiles, setTaskFiles] = useState<File[]>([])
+  const [selectedTaskDetail, setSelectedTaskDetail] = useState<Task | null>(null)
 
   const openEditModal = (task: Task) => {
+    setSelectedTaskDetail(null)
     setEditingTask(task)
     setEditTitle(task.title)
     setEditDescription(task.description || '')
@@ -113,10 +123,9 @@ const Dashboard = () => {
       formData.append('title', newTaskTitle)
       formData.append('description', newTaskDescription)
       formData.append('date', selectedDate.toISOString())
-      
-      // Add files to FormData
+
       taskFiles.forEach((file) => {
-        formData.append('files', file)
+        formData.append('images', file)
       })
 
       const res = await api.post('/tasks/add-tasks', formData, {
@@ -153,6 +162,14 @@ const Dashboard = () => {
     } catch {
       toast.error('ลบไม่สำเร็จ กรุณาลองใหม่')
     }
+  }
+
+  const handleTaskUpdate = (updatedTask: Task) => {
+    setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t))
+  }
+
+  const handleTaskDelete = (taskId: number) => {
+    setTasks(tasks.filter(t => t.id !== taskId))
   }
 
   // ── Calendar ──────────────────────────────────────────────
@@ -203,9 +220,8 @@ const Dashboard = () => {
                 `}>
                   {format(dayItem, 'd')}
                 </span>
-                <button className={`opacity-0 group-hover:opacity-100 rounded-full p-0.5 hidden sm:flex transition-opacity ${
-                  isPastDate ? 'text-stone-300' : 'text-amber-600 hover:bg-amber-200/60'
-                }`}>
+                <button className={`opacity-0 group-hover:opacity-100 rounded-full p-0.5 hidden sm:flex transition-opacity ${isPastDate ? 'text-stone-300' : 'text-amber-600 hover:bg-amber-200/60'
+                  }`}>
                   <Plus size={12} />
                 </button>
               </div>
@@ -215,7 +231,7 @@ const Dashboard = () => {
                 {dayTasks.slice(0, 3).map(task => (
                   <div
                     key={task.id}
-                    onClick={(e) => { e.stopPropagation(); toggleTask(task) }}
+                    onClick={(e) => { e.stopPropagation(); setSelectedTaskDetail(task) }}
                     className={`
                       text-[0.55rem] sm:text-[0.65rem] px-1 sm:px-1.5 py-0.5 rounded
                       truncate flex items-center gap-1 transition-all cursor-pointer
@@ -458,8 +474,8 @@ const Dashboard = () => {
                 </div>
                 <div>
                   <label className={labelClass}>แนบไฟล์ (ทำได้หลายรูป)</label>
-                  <FileUpload 
-                    files={taskFiles} 
+                  <FileUpload
+                    files={taskFiles}
                     onFilesChange={setTaskFiles}
                   />
                 </div>
@@ -499,7 +515,7 @@ const Dashboard = () => {
                       >
                         <div
                           className="flex items-center gap-2 flex-1 cursor-pointer min-w-0"
-                          onClick={() => toggleTask(t)}
+                          onClick={() => setSelectedTaskDetail(t)}
                         >
                           <div className={`w-2 h-2 rounded-full shrink-0 ${t.isDone ? 'bg-green-500' : 'bg-amber-500'}`} />
                           <span className={`text-sm truncate ${t.isDone ? 'line-through text-stone-400' : 'text-stone-700'}`}>
@@ -598,6 +614,18 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+      )}
+
+      {/* ── Task Detail Modal ── */}
+      {selectedTaskDetail && (
+        <TaskDetailModal
+          task={selectedTaskDetail}
+          isOpen={!!selectedTaskDetail}
+          onClose={() => setSelectedTaskDetail(null)}
+          onTaskUpdate={handleTaskUpdate}
+          onTaskDelete={handleTaskDelete}
+          onEditClick={openEditModal}
+        />
       )}
 
       <Toaster

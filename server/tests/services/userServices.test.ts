@@ -22,32 +22,27 @@ describe('User Services', () => {
 
   describe('RegisterServices', () => {
     it('should throw error if email already exists', async () => {
-      const existingUser = { id: 1, email: 'existing@example.com' };
-      (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce(existingUser);
+      (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({ id: 1, email: 'existing@example.com' });
 
-      const newUser = {
+      await expect(userServices.RegisterServices({
         email: 'existing@example.com',
         password: 'password123',
         passwordCon: 'password123',
         first_name: 'John',
         last_name: 'Doe',
-      };
-
-      await expect(userServices.RegisterServices(newUser)).rejects.toThrow('EMAIL_EXISTS');
+      })).rejects.toThrow('EMAIL_EXISTS');
     });
 
     it('should throw error if passwords do not match', async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce(null);
 
-      const newUser = {
+      await expect(userServices.RegisterServices({
         email: 'new@example.com',
         password: 'password123',
         passwordCon: 'password456',
         first_name: 'John',
         last_name: 'Doe',
-      };
-
-      await expect(userServices.RegisterServices(newUser)).rejects.toThrow('PASSWORD_NOT_MATCH');
+      })).rejects.toThrow('PASSWORD_NOT_MATCH');
     });
 
     it('should successfully register a new user', async () => {
@@ -61,15 +56,13 @@ describe('User Services', () => {
         last_name: 'Doe',
       });
 
-      const newUser = {
+      const result = await userServices.RegisterServices({
         email: 'newuser@example.com',
         password: 'password123',
         passwordCon: 'password123',
         first_name: 'John',
         last_name: 'Doe',
-      };
-
-      const result = await userServices.RegisterServices(newUser);
+      });
 
       expect(result).toHaveProperty('id');
       expect(result).toHaveProperty('email', 'newuser@example.com');
@@ -81,12 +74,10 @@ describe('User Services', () => {
     it('should throw error if user not found', async () => {
       (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce(null);
 
-      const loginData = {
+      await expect(userServices.LoginService({
         email: 'nonexistent@example.com',
         password: 'password123',
-      };
-
-      await expect(userServices.LoginService(loginData)).rejects.toThrow('USER_NOT_FOUND');
+      })).rejects.toThrow('USER_NOT_FOUND');
     });
 
     it('should throw error if password is incorrect', async () => {
@@ -94,38 +85,34 @@ describe('User Services', () => {
         id: '1',
         email: 'user@example.com',
         password: 'hashedPassword123',
+        roles: [{ role: { name: 'MEMBER' } }],
       });
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(false);
 
-      const loginData = {
+      await expect(userServices.LoginService({
         email: 'user@example.com',
         password: 'wrongpassword',
-      };
-
-      await expect(userServices.LoginService(loginData)).rejects.toThrow('PASSWORD_INCORRECT');
+      })).rejects.toThrow('PASSWORD_INCORRECT');
     });
 
     it('should successfully login and return tokens', async () => {
-      const user = {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
         id: '1',
         email: 'user@example.com',
         password: 'hashedPassword123',
         refreshToken: null,
-      };
-
-      (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce(user);
+        roles: [{ role: { name: 'MEMBER' } }],  // ← fix: เพิ่ม roles
+      });
       (bcrypt.compare as jest.Mock).mockResolvedValueOnce(true);
       (jwt.sign as jest.Mock)
         .mockReturnValueOnce('accessToken123')
         .mockReturnValueOnce('refreshToken123');
-      (prisma.user.update as jest.Mock).mockResolvedValueOnce(user);
+      (prisma.user.update as jest.Mock).mockResolvedValueOnce({});
 
-      const loginData = {
+      const result = await userServices.LoginService({
         email: 'user@example.com',
         password: 'password123',
-      };
-
-      const result = await userServices.LoginService(loginData);
+      });
 
       expect(result).toHaveProperty('user');
       expect(result).toHaveProperty('accessToken', 'accessToken123');
@@ -145,7 +132,6 @@ describe('User Services', () => {
 
     it('should throw error if refresh token does not match', async () => {
       (jwt.verify as jest.Mock).mockReturnValueOnce({ userId: '1' });
-
       (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
         id: '1',
         refreshToken: 'differentToken',
@@ -155,16 +141,12 @@ describe('User Services', () => {
     });
 
     it('should successfully refresh token', async () => {
-      const userData = { userId: '1' };
-
-      (jwt.verify as jest.Mock).mockReturnValueOnce(userData);
-
+      (jwt.verify as jest.Mock).mockReturnValueOnce({ userId: '1' });
       (prisma.user.findUnique as jest.Mock).mockResolvedValueOnce({
         id: '1',
         email: 'user@example.com',
         refreshToken: 'validToken',
       });
-
       (jwt.sign as jest.Mock).mockReturnValueOnce('newAccessToken123');
 
       const result = await userServices.refreshTokenService('validToken');

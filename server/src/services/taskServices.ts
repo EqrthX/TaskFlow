@@ -9,8 +9,12 @@ export const AddTaskServices = async (data: CreateTaskData) => {
             title: title,
             description: description, 
             date: date,               
-            userId: userId            
-        }
+            userId: userId,
+            attachments: {
+                create: data.attachments
+            }         
+        },
+        include: {attachments: true}
     });
 
     return newTask;

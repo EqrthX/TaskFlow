@@ -3,6 +3,7 @@ import logger from "../config/logger";
 import { AuthRequest } from "../middlewares/authMiddleware";
 import { AddTaskServices, DeleteTaskServices, UpdateTaskServices, UpdateTaskStatusServices } from "../services/taskServices";
 import prisma from "../config/db";
+import { uploadImageToAzure } from "../services/azureStorage";
 
 
 export const AddTasks = async (req: AuthRequest, res: Response) => {
@@ -10,7 +11,15 @@ export const AddTasks = async (req: AuthRequest, res: Response) => {
     const {title, description, date} = req.body;
     try {
         const userId = req.user.userId;
-        
+        const files = req.files as Express.Multer.File[];
+        const attachmentData: {url: string; fileName: string}[] = [];
+
+        if(files && files.length > 0) {
+            for(const file of files) {
+                const imageUrl = await uploadImageToAzure(file);
+                attachmentData.push({url: imageUrl, fileName: file.originalname});
+            }
+        }
         if(!title || !date || !description) {
             return res.status(400).json({error: "กรุณาส่งข้อมูล title และ date ให้ครบ"})
         }
@@ -19,7 +28,8 @@ export const AddTasks = async (req: AuthRequest, res: Response) => {
             title, 
             description, 
             date: new Date(date), 
-            userId
+            userId,
+            attachments: attachmentData
         });
 
         return res.status(201).json({
@@ -33,6 +43,8 @@ export const AddTasks = async (req: AuthRequest, res: Response) => {
                 logger.error(`Error Controller AddTasks Email:${error.message} ${new Date().toDateString()}`)
                 return res.status(400).json({ error: "ไม่มีข้อมูลงานที่กรอกเข้ามา" });
             }
+
+            logger.error(`AddTasks Failed: ${error.message}`);
             res.status(500).json({
                 error: "Something went wrong to AddTasks",
                 detail: error.message
@@ -46,6 +58,9 @@ export const showTasks = async (req: AuthRequest, res: Response) => {
         const result = await prisma.task.findMany({
             where:{
                 userId: req.user.userId
+            },
+            include: {
+                attachments: true
             },
             orderBy: {
                 date: 'asc'
