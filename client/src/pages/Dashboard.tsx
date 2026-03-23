@@ -50,6 +50,7 @@ const Dashboard = () => {
   const [editDescription, setEditDescription] = useState('')
   const [taskFiles, setTaskFiles] = useState<File[]>([])
   const [selectedTaskDetail, setSelectedTaskDetail] = useState<Task | null>(null)
+  const [isSummitting, setIsSubmitting] = useState(false)
 
   const openEditModal = (task: Task) => {
     setSelectedTaskDetail(null)
@@ -118,6 +119,10 @@ const Dashboard = () => {
       toast.error('ไม่สามารถเพิ่มงานในวันที่ผ่านมาแล้ว')
       return
     }
+
+    setIsSubmitting(true)
+    const toastId = toast.loading('กำลังเพิ่มงาน...')
+
     try {
       const formData = new FormData()
       formData.append('title', newTaskTitle)
@@ -138,10 +143,11 @@ const Dashboard = () => {
       setNewTaskDescription('')
       setTaskFiles([])
       setIsModalOpen(false)
-      toast.success('เพิ่มงานสำเร็จ!')
+      toast.success('เพิ่มงานสำเร็จ!', { id: toastId })
     } catch {
       toast.error('เพิ่มงานไม่สำเร็จ')
-    }
+    } finally { setIsSubmitting(false) }
+
   }
 
   // const toggleTask = async (task: Task) => {
@@ -492,9 +498,15 @@ const Dashboard = () => {
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 text-sm bg-gradient-to-br from-amber-500 to-amber-700 text-amber-50 font-bold rounded-lg shadow-md shadow-amber-600/25 transition-all hover:-translate-y-0.5"
+                    disabled={isSummitting} 
+                    className={`px-4 py-2 text-sm text-amber-50 font-bold rounded-lg shadow-md transition-all 
+                        ${isSummitting
+                        ? 'bg-stone-400 cursor-not-allowed opacity-70'
+                        : 'bg-linear-to-br from-amber-500 to-amber-700 hover:-translate-y-0.5 shadow-amber-600/25'
+                      }`}
                   >
-                    บันทึก
+                    {/* 🌟 เปลี่ยนข้อความตามสถานะ */}
+                    {isSummitting ? 'กำลังบันทึก...' : 'บันทึก'}
                   </button>
                 </div>
               </form>
