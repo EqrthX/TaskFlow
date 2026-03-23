@@ -12,6 +12,6 @@ RUN npm run build
 FROM nginx:alpine
 COPY --from=builder /app/dist /usr/share/nginx/html
 COPY nginx.conf /etc/nginx/conf.d/default.conf
-
+RUN echo "client_max_body_size 20M;" > /etc/nginx/conf.d/uploads.conf
 EXPOSE 80
 CMD ["nginx", "-g", "daemon off;"]
