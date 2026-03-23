@@ -48,9 +48,12 @@ jobs:
           username: azureuser
           key: ${{secrets.AZURE_SSH_KEY}}
           script: |   # ✅ ใส่เครื่องหมาย | เพื่อรันหลายบรรทัด
+            set -e
+
             cd ~/TaskFlow
             git pull origin main
             
+            echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" > .env
             echo "AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" >> .env          
             
             docker pull ${{ secrets.DOCKER_USERNAME }}/taskflow-server:latest
