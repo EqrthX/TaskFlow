@@ -104,3 +104,6 @@ This project utilizes a modern DevOps workflow:
 2.  Build & Push: Builds Docker images for both client and server and pushes them to Docker Hub.
 
 3.  Deploy: SSH into the Azure VM, pulls the latest images, recreates the .env file securely from GitHub Secrets, and restarts the containers using docker-compose up -d.
+
+## 📝 License
+This project is open-source and available under the MIT License.
