@@ -20,6 +20,7 @@ services:
       - redis
     environment:
       - DATABASE_URL=postgresql://admin:admin123@postgres:5432/taskflow?schema=public
+      - REDIS_URL=redis://redis:6379
     env_file:
       - .env
 
