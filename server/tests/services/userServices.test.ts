@@ -77,7 +77,7 @@ describe('User Services', () => {
       await expect(userServices.LoginService({
         email: 'nonexistent@example.com',
         password: 'password123',
-      })).rejects.toThrow('USER_NOT_FOUND');
+      })).rejects.toThrow('ไม่พบผู้ใช้งาน');
     });
 
     it('should throw error if password is incorrect', async () => {
@@ -92,7 +92,7 @@ describe('User Services', () => {
       await expect(userServices.LoginService({
         email: 'user@example.com',
         password: 'wrongpassword',
-      })).rejects.toThrow('PASSWORD_INCORRECT');
+      })).rejects.toThrow('รหัสผ่านไม่ถูกต้อง');
     });
 
     it('should successfully login and return tokens', async () => {

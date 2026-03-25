@@ -44,13 +44,13 @@ export const LoginService = async (data: LoginRequest) => {
     })
 
     if(!findUser) {
-        throw new Error("USER_NOT_FOUND")
+        throw new Error("ไม่พบผู้ใช้งาน")
     }
 
     const comparePassword = await bcrypt.compare(data.password, findUser.password);
 
     if(!comparePassword) {
-        throw new Error("PASSWORD_INCORRECT")
+        throw new Error("รหัสผ่านไม่ถูกต้อง")
     }
 
     const userRoles = findUser.roles.map(r => r.role.name);

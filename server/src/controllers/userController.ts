@@ -54,11 +54,15 @@ export const Login = async (req: Request<LoginRequest>, res: Response) => {
 
     try {
         if (!email || !password) {
-            return res.status(400).json({ error: "กรุณากรอกข้อมูลให้ครบถ้วน" });
+            return res.status(400).json({
+                message: "ไม่พบผู้ใช้งาน"
+            })
         }
 
         if (!isValidEmail(email)) {
-            return res.status(400).json({ error: "รูปแบบอีเมลไม่ถูกต้อง" })
+            return res.status(400).json({
+                message: "รูปแบบอีเมลไม่ถูกต้อง"
+            })
         }
 
         const result = await LoginService({
@@ -67,7 +71,7 @@ export const Login = async (req: Request<LoginRequest>, res: Response) => {
         })
 
         res.cookie("accessToken", result.accessToken, {
-            httpOnly: true, // ป้องกัน XSS (ให้ JS ฝั่งหน้าเว็บอ่านไม่ได้)
+            httpOnly: true, // ป้องกัน XSS 
             secure: false, // ใช้ true ถ้าเป็น https
             sameSite: "lax",
             maxAge: 24 * 60 * 60 * 1000 // หมดอายุ 1 วัน (ให้ตรงกับ expiresIn)
@@ -85,7 +89,14 @@ export const Login = async (req: Request<LoginRequest>, res: Response) => {
             user: result.user
         })
     } catch (error: unknown) {
-        if(error instanceof Error) return res.status(500).json({ error: "Somthing went wrong to Login" })
+        if(error instanceof Error) {
+            if(error.message === "ไม่พบผู้ใช้งาน" || error.message === "รหัสผ่านไม่ถูกต้อง") {
+                return res.status(401).json({ error: error.message });
+            }
+            logger.error(`Login Error: ${error.message}`);
+            return res.status(500).json({ error: "Somthing went wrong to Login", message: error.message })
+        }
+        return res.status(500).json({ error: "Unknown error occurred during login" });
     }
 }
 

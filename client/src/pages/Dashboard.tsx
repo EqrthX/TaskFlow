@@ -114,7 +114,12 @@ const Dashboard = () => {
 
   const handleAddTask = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!newTaskTitle.trim() || !selectedDate || !newTaskDescription.trim()) return
+
+    if (!newTaskTitle.trim() || !selectedDate || !newTaskDescription.trim()) {
+      toast.error('กรุณากรอกข้อมูลให้ครบถ้วน')
+      return
+    }
+
     if (isBefore(startOfDay(selectedDate), startOfDay(new Date()))) {
       toast.error('ไม่สามารถเพิ่มงานในวันที่ผ่านมาแล้ว')
       return
@@ -145,19 +150,11 @@ const Dashboard = () => {
       setIsModalOpen(false)
       toast.success('เพิ่มงานสำเร็จ!', { id: toastId })
     } catch {
-      toast.error('เพิ่มงานไม่สำเร็จ')
+      toast.error('เพิ่มงานไม่สำเร็จ', { id: toastId })
+      setIsSubmitting(false)
     } finally { setIsSubmitting(false) }
 
   }
-
-  // const toggleTask = async (task: Task) => {
-  //   try {
-  //     setTasks(tasks.map(t => t.id === task.id ? { ...t, isDone: !t.isDone } : t))
-  //     await api.patch(`/tasks/update-task/${task.id}`, { isDone: !task.isDone })
-  //   } catch {
-  //     console.error('Update failed')
-  //   }
-  // }
 
   const deleteTask = async (id: number) => {
     if (!confirm('ลบงานนี้?')) return
@@ -178,7 +175,6 @@ const Dashboard = () => {
     setTasks(tasks.filter(t => t.id !== taskId))
   }
 
-  // ── Calendar ──────────────────────────────────────────────
   const renderCalendar = () => {
     const monthStart = startOfMonth(currentMonth)
     const monthEnd = endOfMonth(monthStart)
@@ -265,7 +261,7 @@ const Dashboard = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen min-h-dvh bg-amber-50 flex flex-col items-center justify-center"
+      <div className="min-h-screen bg-amber-50 flex flex-col items-center justify-center"
         style={{ backgroundImage: "radial-gradient(ellipse at 30% 50%, rgba(210,180,140,0.2) 0%, transparent 60%)" }}>
         <div className="w-12 h-12 mb-4 bg-linear-to-br from-amber-400 to-amber-700 rounded-xl flex items-center justify-center text-2xl shadow-lg shadow-amber-600/25 animate-pulse">
           📝
@@ -282,7 +278,7 @@ const Dashboard = () => {
 
   return (
     <div
-      className="min-h-screen min-h-dvh flex"
+      className="min-h-dvh flex"
       style={{
         backgroundColor: '#f5f0e8',
         backgroundImage: "radial-gradient(ellipse at 20% 50%, rgba(210,180,140,0.18) 0%, transparent 60%), radial-gradient(ellipse at 80% 20%, rgba(188,164,130,0.12) 0%, transparent 50%)",

@@ -132,7 +132,7 @@ describe('User Controller', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'กรุณากรอกข้อมูลให้ครบถ้วน',
+        message: 'ไม่พบผู้ใช้งาน',
       });
     });
 
@@ -148,7 +148,7 @@ describe('User Controller', () => {
 
       expect(mockRes.status).toHaveBeenCalledWith(400);
       expect(mockRes.json).toHaveBeenCalledWith({
-        error: 'รูปแบบอีเมลไม่ถูกต้อง',
+        message: 'รูปแบบอีเมลไม่ถูกต้อง',
       });
     });
 
