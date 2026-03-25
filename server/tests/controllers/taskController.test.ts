@@ -3,10 +3,15 @@ import * as taskController from '../../src/controllers/taskController';
 import * as taskServices from '../../src/services/taskServices';
 import { AuthRequest } from '../../src/middlewares/authMiddleware';
 import prisma from '../../src/config/db';
+import { sendNotificationEmail } from '../../src/services/emailServices';
+
 jest.mock('../../src/config/db', () => ({
-  task: {
-    findMany: jest.fn(),
+  user: {
+    findUnique: jest.fn(),
   },
+  task: {
+    findMany: jest.fn(), // เผื่อมีการใช้ที่อื่น
+  }
 }));
 jest.mock('../../src/services/azureStorage', () => ({
   uploadImageToAzure: jest.fn()
@@ -17,7 +22,9 @@ jest.mock('../../src/config/logger', () => ({
   error: jest.fn(),
 }));
 
-
+jest.mock('../../src/services/emailServices', () => ({
+  sendNotificationEmail: jest.fn().mockResolvedValue(true),
+}));
 
 jest.mock('../../src/config/redis', () => {
   // สร้าง Mock Object ไว้ด้านใน factory function นี้เลย
@@ -27,7 +34,7 @@ jest.mock('../../src/config/redis', () => {
     del: jest.fn(),
     isReady: true,
   };
-  
+
   return {
     __esModule: true,
     default: mClient,
@@ -55,6 +62,12 @@ describe('Task Controller', () => {
   });
 
   describe('AddTasks', () => {
+    beforeEach(() => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        email: 'test@example.com',
+        first_name: 'TestUser'
+      });
+    });
     it('should return 400 if required fields are missing', async () => {
       mockReq.body = {
         title: 'Test Task',
@@ -116,6 +129,39 @@ describe('Task Controller', () => {
       await taskController.AddTasks(mockReq as AuthRequest, mockRes as Response);
 
       expect(mockRes.status).toHaveBeenCalledWith(500);
+    });
+
+    it('should call sendNotificationEmail when a task is added', async () => {
+      mockReq.body = {
+        title: 'Email Task',
+        description: 'Test Description',
+        date: '2026-03-26',
+      };
+
+      const mockUser = { email: 'test@example.com', first_name: 'Test' };
+
+      // 🌟 1. เพิ่มบรรทัดนี้: ต้อง Mock ให้ AddTaskServices คืนค่างานกลับมาด้วย ไม่งั้น newTask จะพัง
+      const mockTask = {
+        id: 1,
+        title: 'Email Task',
+        description: 'Test Description',
+        date: new Date('2026-03-26'),
+      };
+      (taskServices.AddTaskServices as jest.Mock).mockResolvedValue(mockTask);
+
+      // ให้ prisma.user.findUnique คืนค่า mockUser
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue(mockUser);
+
+      await taskController.AddTasks(mockReq as AuthRequest, mockRes as Response);
+
+      // ตรวจสอบว่าฟังก์ชันถูกเรียก
+      expect(sendNotificationEmail).toHaveBeenCalled();
+
+      // ตรวจสอบพารามิเตอร์ที่ส่งไป
+      expect(sendNotificationEmail).toHaveBeenCalledWith(expect.objectContaining({
+        to: 'test@example.com',
+        subject: expect.stringContaining('เพิ่มงานใหม่: Email Task'),
+      }));
     });
   });
 
@@ -332,6 +378,12 @@ describe('Task Controller', () => {
   });
 
   describe('AddTasks with file uploads', () => {
+    beforeEach(() => {
+      (prisma.user.findUnique as jest.Mock).mockResolvedValue({
+        email: 'test@example.com',
+        first_name: 'TestUser'
+      });
+    });
     it('should add task with multiple file attachments', async () => {
       const mockFiles: Express.Multer.File[] = [
         {
@@ -364,8 +416,8 @@ describe('Task Controller', () => {
         title: 'Task with attachments',
         description: 'Task with multiple files',
         date: '2024-03-15',
-        category: 'ทั่วไป',  
-        color: '#3b82f6',  
+        category: 'ทั่วไป',
+        color: '#3b82f6',
       };
       mockReq.files = mockFiles;
 
@@ -376,8 +428,8 @@ describe('Task Controller', () => {
         date: new Date('2024-03-15'),
         userId: '1',
         isDone: false,
-        category: 'ทั่วไป',  
-        color: '#3b82f6',  
+        category: 'ทั่วไป',
+        color: '#3b82f6',
         attachments: [
           { url: 'https://azure.blob.com/doc1.pdf', fileName: 'document.pdf' },
           { url: 'https://azure.blob.com/img1.png', fileName: 'image.png' },

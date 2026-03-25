@@ -1,6 +1,7 @@
 import app from "./app";
 import logger from "./config/logger";
 import {connectRedis} from "../src/config/redis";
+import { startCronJobs } from './jobs/cronJobs'; 
 
 const PORT = process.env.PORT || 3231;
 try {
@@ -9,6 +10,7 @@ try {
     app.listen(PORT, () => {
         logger.info(`Server is running at http://localhost:${PORT}`);
     })
+    startCronJobs();
     
 } catch (error) {
     logger.error("Error Running Server:",error)

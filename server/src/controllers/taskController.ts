@@ -5,6 +5,7 @@ import { AddTaskServices, DeleteTaskServices, UpdateTaskServices, UpdateTaskStat
 import prisma from "../config/db";
 import { uploadImageToAzure } from "../services/azureStorage";
 import redisClient from "../config/redis";
+import { sendNotificationEmail } from "../services/emailServices";
 
 export const AddTasks = async (req: AuthRequest, res: Response) => {
     logger.info(`Start Controller Registination ${new Date().toDateString()}`);
@@ -37,6 +38,30 @@ export const AddTasks = async (req: AuthRequest, res: Response) => {
         if (redisClient.isReady) {
             await redisClient.del(cacheKey);
             console.log("🗑️ ล้างแคช Redis เรียบร้อย");
+        }
+
+        const user = await prisma.user.findUnique({
+            where: {id: userId},
+            select: {email: true, first_name: true}
+        });
+        if(user && user.email) {
+            const emailHtml = `
+              <div style="font-family: Arial, sans-serif; padding: 20px; color: #333;">
+                <h2 style="color: #d97706;">📝 มีงานใหม่ถูกเพิ่มเข้าระบบ!</h2>
+                <p>สวัสดีครับ,</p>
+                <p>งาน <strong>"${newTask.title}"</strong> ได้ถูกเพิ่มลงใน TaskFlow ของคุณเรียบร้อยแล้ว</p>
+                <p>📅 กำหนดส่ง: ${new Date(newTask.date).toLocaleDateString('th-TH')}</p>
+                <br/>
+                <p>ขอให้เป็นวันที่ดีและทำงานอย่างมีความสุขครับ 🚀</p>
+                <hr style="border: 1px solid #eee; margin-top: 20px;"/>
+                <p style="font-size: 12px; color: #999;">อีเมลฉบับนี้เป็นการแจ้งเตือนอัตโนมัติจากระบบ TaskFlow</p>
+              </div>
+            `;
+            sendNotificationEmail({
+                to: user.email,
+                subject: `[TaskFlow] เพิ่มงานใหม่: ${newTask.title}`,
+                html: emailHtml
+            })
         }
         return res.status(201).json({
             message: "เพิ่มงานสำเร็จ",
