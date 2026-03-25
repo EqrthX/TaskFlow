@@ -56,6 +56,8 @@ jobs:
             git reset --hard origin/main
 
             echo "AZURE_STORAGE_CONNECTION_STRING=${{ secrets.AZURE_STORAGE_CONNECTION_STRING }}" > .env          
+            echo "EMAIL_USER=${{secrets.EMAIL_USER}}" >> .env
+            echo "EMAIL_PASSWORD=${{secrets.EMAIL_PASSWORD}}" >> .env
             
             docker pull ${{ secrets.DOCKER_USERNAME }}/taskflow-server:latest
             docker pull ${{ secrets.DOCKER_USERNAME }}/taskflow-client:latest
