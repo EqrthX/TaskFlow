@@ -25,7 +25,7 @@ interface Task {
   description?: string
   isDone: boolean
   date: string
-  color: string
+  color?: string
   category?: string
   attachments: Attachment[]
 }
