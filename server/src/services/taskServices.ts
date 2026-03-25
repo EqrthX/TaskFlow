@@ -2,7 +2,7 @@ import prisma from "../config/db";
 import { CreateTaskData } from "../types/taskTypes";
 
 export const AddTaskServices = async (data: CreateTaskData) => {
-    const { title, description, date, userId } = data;
+    const { title, description, date, userId, color, category } = data;
 
     const newTask = await prisma.task.create({
         data: {
@@ -10,6 +10,8 @@ export const AddTaskServices = async (data: CreateTaskData) => {
             description: description, 
             date: date,               
             userId: userId,
+            color: color,
+            category: category,
             attachments: {
                 create: data.attachments
             }         

@@ -31,7 +31,8 @@ model Task {
   isDone      Boolean  @default(false)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
+  category    String? 
+  color       String? @default("#f59e0b")
   userId      String
   user        User     @relation(fields: [userId], references: [id])
 

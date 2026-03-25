@@ -25,6 +25,8 @@ interface Task {
   description?: string
   isDone: boolean
   date: string
+  color: string
+  category?: string
   attachments: Attachment[]
 }
 
@@ -43,21 +45,32 @@ const Dashboard = () => {
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false)
   const [isSidebarOpen, setIsSidebarOpen] = useState(false)
   const [isModalOpen, setIsModalOpen] = useState(false)
+
   const [newTaskTitle, setNewTaskTitle] = useState('')
   const [newTaskDescription, setNewTaskDescription] = useState('')
+  const [newTaskCategory, setNewTaskCategory] = useState('')
+  const [newTaskColor, setNewTaskColor] = useState('#f59e0b')
+
   const [editingTask, setEditingTask] = useState<Task | null>(null)
   const [editTitle, setEditTitle] = useState('')
   const [editDescription, setEditDescription] = useState('')
   const [taskFiles, setTaskFiles] = useState<File[]>([])
   const [selectedTaskDetail, setSelectedTaskDetail] = useState<Task | null>(null)
   const [isSummitting, setIsSubmitting] = useState(false)
-
   const openEditModal = (task: Task) => {
     setSelectedTaskDetail(null)
     setEditingTask(task)
     setEditTitle(task.title)
     setEditDescription(task.description || '')
   }
+  const colorOptions = [
+    { hex: '#f59e0b', name: 'เหลือง (Amber)' },
+    { hex: '#ef4444', name: 'แดง (ด่วน)' },
+    { hex: '#3b82f6', name: 'ฟ้า (ทั่วไป)' },
+    { hex: '#10b981', name: 'เขียว (สุขภาพ)' },
+    { hex: '#8b5cf6', name: 'ม่วง (ส่วนตัว)' },
+    { hex: '#012023', name: 'เทา (อื่นๆ)' },
+  ]
 
   const handleEditTask = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -133,6 +146,8 @@ const Dashboard = () => {
       formData.append('title', newTaskTitle)
       formData.append('description', newTaskDescription)
       formData.append('date', selectedDate.toISOString())
+      formData.append('color', newTaskColor)
+      formData.append('category', newTaskCategory)
 
       taskFiles.forEach((file) => {
         formData.append('images', file)
@@ -246,7 +261,10 @@ const Dashboard = () => {
                         : 'bg-white text-stone-600 border border-amber-200 shadow-sm hover:border-amber-400'}
                     `}
                   >
-                    <div className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 ${task.isDone ? 'bg-green-500' : 'bg-amber-500'}`} />
+                    <div
+                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 ${task.isDone ? 'bg-green-500' : ''}`}
+                      style={{ backgroundColor: task.isDone ? undefined : (task.color || '#f59e0b') }}
+                    />
                     <span className="truncate">{task.title}</span>
                   </div>
                 ))}
@@ -398,7 +416,7 @@ const Dashboard = () => {
             style={{ boxShadow: "0 8px 40px rgba(139,109,56,0.18)" }}
             onClick={e => e.stopPropagation()}
           >
-            <div className="h-[3px] w-full bg-gradient-to-r from-rose-400 via-rose-300 to-rose-400 rounded-t-sm -mt-6 sm:-mt-8 mb-6 sm:mb-8 -mx-6 sm:-mx-8 px-6 sm:px-8" />
+            <div className="h-0.75 w-full bg-linear-to-r from-rose-400 via-rose-300 to-rose-400 rounded-t-sm -mt-6 sm:-mt-8 mb-6 sm:mb-8 -mx-6 sm:-mx-8 px-6 sm:px-8" />
             <div className="w-12 h-12 bg-rose-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <LogOut className="text-rose-500" size={22} />
             </div>
@@ -413,7 +431,7 @@ const Dashboard = () => {
               </button>
               <button
                 onClick={handleLogout}
-                className="flex-1 py-2.5 text-sm bg-gradient-to-br from-rose-500 to-rose-700 text-white rounded-lg font-bold shadow-md shadow-rose-600/25 transition-all hover:-translate-y-0.5"
+                className="flex-1 py-2.5 text-sm bg-linear-to-br from-rose-500 to-rose-700 text-white rounded-lg font-bold shadow-md shadow-rose-600/25 transition-all hover:-translate-y-0.5"
               >
                 ออกจากระบบ
               </button>
@@ -434,7 +452,7 @@ const Dashboard = () => {
             onClick={e => e.stopPropagation()}
           >
             {/* Top accent */}
-            <div className="h-[3px] w-full bg-gradient-to-r from-amber-600 via-amber-400 to-amber-600 rounded-t-2xl sm:rounded-t-sm" />
+            <div className="h-0.75 w-full bg-linear-to-r from-amber-600 via-amber-400 to-amber-600 rounded-t-2xl sm:rounded-t-sm" />
 
             <div className="px-5 sm:px-7 py-5 sm:py-7">
               {/* Modal header */}
@@ -485,6 +503,34 @@ const Dashboard = () => {
                     onFilesChange={setTaskFiles}
                   />
                 </div>
+                <div>
+                  <label className={labelClass}>หมวดหมู่ / แท็ก (ตัวเลือก)</label>
+                  <input
+                    type="text"
+                    placeholder="เช่น งานบริษัท, ออกกำลังกาย..."
+                    className={inputClass}
+                    value={newTaskCategory}
+                    onChange={e => setNewTaskCategory(e.target.value)}
+                  />
+                </div>
+
+                {/* เลือกสี */}
+                <div>
+                  <label className={labelClass}>สีของงาน</label>
+                  <div className="flex gap-2 mt-1">
+                    {colorOptions.map((c) => (
+                      <button
+                        key={c.hex}
+                        type="button"
+                        onClick={() => setNewTaskColor(c.hex)}
+                        className={`w-8 h-8 rounded-full border-2 transition-transform ${newTaskColor === c.hex ? 'scale-125 border-stone-800' : 'border-transparent hover:scale-110'
+                          }`}
+                        style={{ backgroundColor: c.hex }}
+                        title={c.name}
+                      />
+                    ))}
+                  </div>
+                </div>
                 <div className="flex justify-end gap-2 pt-1">
                   <button
                     type="button"
@@ -498,7 +544,7 @@ const Dashboard = () => {
                   </button>
                   <button
                     type="submit"
-                    disabled={isSummitting} 
+                    disabled={isSummitting}
                     className={`px-4 py-2 text-sm text-amber-50 font-bold rounded-lg shadow-md transition-all 
                         ${isSummitting
                         ? 'bg-stone-400 cursor-not-allowed opacity-70'
@@ -515,7 +561,7 @@ const Dashboard = () => {
               <div className="mt-5 pt-4 border-t border-dashed border-amber-200">
                 <div className="flex items-center gap-2 mb-3">
                   <span className="text-[0.6rem] font-bold text-amber-600 uppercase tracking-widest">งานในวันนี้</span>
-                  <div className="flex-1 h-px bg-gradient-to-r from-amber-200 to-transparent" />
+                  <div className="flex-1 h-px bg-linear-to-r from-amber-200 to-transparent" />
                 </div>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {tasks
@@ -529,10 +575,11 @@ const Dashboard = () => {
                           className="flex items-center gap-2 flex-1 cursor-pointer min-w-0"
                           onClick={() => setSelectedTaskDetail(t)}
                         >
-                          <div className={`w-2 h-2 rounded-full shrink-0 ${t.isDone ? 'bg-green-500' : 'bg-amber-500'}`} />
-                          <span className={`text-sm truncate ${t.isDone ? 'line-through text-stone-400' : 'text-stone-700'}`}>
-                            {t.title}
-                          </span>
+                          <div
+                            className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full shrink-0 ${t.isDone ? 'bg-green-500' : ''}`}
+                            style={{ backgroundColor: t.isDone ? undefined : (t.color || '#f59e0b') }}
+                          />
+                          <span className="truncate">{t.title}</span>
                         </div>
                         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0 ml-2">
                           <button

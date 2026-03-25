@@ -74,6 +74,8 @@ describe('Task Controller', () => {
         title: 'Test Task',
         description: 'Test Description',
         date: '2024-03-01',
+        category: 'ทั่วไป',  // 🌟 เพิ่มบรรทัดนี้
+        color: '#3b82f6',
       };
 
       const newTask = {
@@ -83,6 +85,8 @@ describe('Task Controller', () => {
         date: new Date('2024-03-01'),
         userId: '1',
         isDone: false,
+        category: 'ทั่วไป',  // 🌟 เพิ่มบรรทัดนี้
+        color: '#3b82f6',
       };
 
       (taskServices.AddTaskServices as jest.Mock).mockResolvedValueOnce(newTask);
@@ -101,6 +105,8 @@ describe('Task Controller', () => {
         title: 'Test Task',
         description: 'Test Description',
         date: '2024-03-01',
+        category: 'ทั่วไป',  // 🌟 เพิ่มบรรทัดนี้
+        color: '#3b82f6',
       };
 
       (taskServices.AddTaskServices as jest.Mock).mockRejectedValueOnce(
@@ -358,6 +364,8 @@ describe('Task Controller', () => {
         title: 'Task with attachments',
         description: 'Task with multiple files',
         date: '2024-03-15',
+        category: 'ทั่วไป',  
+        color: '#3b82f6',  
       };
       mockReq.files = mockFiles;
 
@@ -368,6 +376,8 @@ describe('Task Controller', () => {
         date: new Date('2024-03-15'),
         userId: '1',
         isDone: false,
+        category: 'ทั่วไป',  
+        color: '#3b82f6',  
         attachments: [
           { url: 'https://azure.blob.com/doc1.pdf', fileName: 'document.pdf' },
           { url: 'https://azure.blob.com/img1.png', fileName: 'image.png' },

@@ -8,8 +8,8 @@ import redisClient from "../config/redis";
 
 export const AddTasks = async (req: AuthRequest, res: Response) => {
     logger.info(`Start Controller Registination ${new Date().toDateString()}`);
-    const { title, description, date } = req.body;
-    try {
+    const { title, description, date, color, category } = req.body;
+    try {        
         const userId = req.user.userId;
         const files = req.files as Express.Multer.File[];
         const attachmentData: { url: string; fileName: string }[] = [];
@@ -20,7 +20,7 @@ export const AddTasks = async (req: AuthRequest, res: Response) => {
                 attachmentData.push({ url: imageUrl, fileName: file.originalname });
             }
         }
-        if (!title || !date || !description) {
+        if (!title || !date || !description ) {
             return res.status(400).json({ error: "กรุณาส่งข้อมูล title และ date ให้ครบ" })
         }
 
@@ -29,6 +29,8 @@ export const AddTasks = async (req: AuthRequest, res: Response) => {
             description,
             date: new Date(date),
             userId,
+            color,
+            category,
             attachments: attachmentData
         });
         const cacheKey = `tasks:${userId}`;
