@@ -169,6 +169,10 @@ const Dashboard = () => {
 
   const handleTaskUpdate = (updatedTask: Task) => {
     setTasks(tasks.map(t => t.id === updatedTask.id ? updatedTask : t))
+
+    if (selectedTaskDetail && selectedTaskDetail.id === updatedTask.id) {
+      setSelectedTaskDetail(updatedTask)
+    }
   }
 
   const handleTaskDelete = (taskId: number) => {
