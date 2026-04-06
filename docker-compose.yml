@@ -1,44 +1,57 @@
 services:
-  # --- 1. หน้าบ้าน (Client) ---
   client:
     image: nontprawitch/taskflow-client:latest
+    restart: always
     ports:
-      - "80:80"  # หรือพอร์ตที่ลูกพี่ตั้งไว้ เช่น "5173:5173"
+      - "80:80"  
       - "443:443"
     volumes:
-      - /etc/letsencrypt:/etc/letsencrypt:ro  # 🌟 ดึงไฟล์กุญแจ SSL เข้าไปให้ Nginx อ่าน
+      - /etc/letsencrypt:/etc/letsencrypt:ro  
     depends_on:
       - server
 
-  # --- 2. หลังบ้าน (Server) ---
   server:
     image: nontprawitch/taskflow-server:latest
+    restart: always
     ports:
       - "3231:3231"
     depends_on:
-      - postgres
-      - redis
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     environment:
       - DATABASE_URL=postgresql://admin:admin123@postgres:5432/taskflow?schema=public
       - REDIS_URL=redis://redis:6379
     env_file:
       - .env
 
-  # --- 3. ฐานข้อมูล (DB) ---
   postgres:
     image: postgres:15-alpine
+    restart: always
     volumes:
       - taskflow_postgres_data:/var/lib/postgresql/data
     environment:
       POSTGRES_USER: admin
       POSTGRES_PASSWORD: admin123
       POSTGRES_DB: taskflow
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U admin -d taskflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+  
   redis:
     image: redis:alpine
     container_name: taskflow-redis
     ports:
       - "6379:6379"
     restart: always
-
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      
 volumes:
   taskflow_postgres_data:
