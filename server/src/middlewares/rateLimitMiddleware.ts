@@ -12,7 +12,7 @@ export const globalLimiter = rateLimit({
 
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // เวลา 15 นาที
-  max: 5, // 🌟 1 IP ลองล็อกอินผิด/ยิง API ได้แค่ 5 ครั้ง!
+  max: 10, // 🌟 1 IP ลองล็อกอินผิด/ยิง API ได้แค่ 5 ครั้ง!
   message: {
     message: 'คุณพยายามเข้าสู่ระบบบ่อยเกินไป กรุณารอ 15 นาทีแล้วลองใหม่'
   },
