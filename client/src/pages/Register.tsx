@@ -26,7 +26,7 @@ const Register = () => {
     setError("");
 
     if (formData.password !== formData.confirmPassword) {
-      return setError("Passwords do not match!");
+      return setError("รหัสผ่านไม่ตรงกัน!");
     }
 
     setLoading(true);
