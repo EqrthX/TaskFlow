@@ -36,7 +36,7 @@ const Register = () => {
         last_name: formData.lastName,
         email: formData.email,
         password: formData.password,
-        passwordCon: formData.password,
+        passwordCon: formData.confirmPassword,
       });
       toast.success("Registration successful!");
       navigate("/login");
